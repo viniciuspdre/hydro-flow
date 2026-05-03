@@ -13,6 +13,7 @@ import br.com.project.hydroflow.domain.User;
 import br.com.project.hydroflow.dto.LoginDTO;
 import br.com.project.hydroflow.repository.UserRepository;
 import br.com.project.hydroflow.security.JwtService;
+import br.com.project.hydroflow.security.UserDetailsServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.reflect.Field;
 import java.util.Optional;
@@ -50,6 +51,9 @@ class AuthControllerWebMvcTest {
 
     @MockitoBean
     private PasswordEncoder passwordEncoder;
+
+    @MockitoBean
+    private UserDetailsServiceImpl userDetailsService;
 
     @Test
     @DisplayName("POST /hf/auth/login retorna 403 e FirstAccessDTO quando usuário está em primeiro acesso")

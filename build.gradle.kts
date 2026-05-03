@@ -1,5 +1,7 @@
 plugins {
     java
+
+    jacoco
     id("org.springframework.boot") version "4.0.3"
     id("io.spring.dependency-management") version "1.1.7"
 
@@ -68,6 +70,23 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        html.required = true
+        xml.required = true
+    }
+}
+
+tasks.test {
+    reports {
+        junitXml.required = true
+        html.required = true
+    }
+
+    finalizedBy(tasks.jacocoTestReport)
 }
 
 tasks.withType<Test> {
