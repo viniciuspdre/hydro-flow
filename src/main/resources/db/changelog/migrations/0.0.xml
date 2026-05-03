@@ -169,7 +169,7 @@
             <column name="email" value="${ADMIN_EMAIL}"/>
             <column name="password" value="${ADMIN_PASSWORD_HASH}"/>
             <column name="id_role" value="1"/>
-            <column name="first_access" value="true"/>
+            <column name="first_access" value="false"/>
         </insert>
 
     </changeSet>
