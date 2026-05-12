@@ -49,7 +49,8 @@ public class WaterDeliveryService {
             BigDecimal toFill = remainingWater.min(availableSpace);
 
             BigDecimal newLevel = cistern.getCurrentLevelLiters().add(toFill);
-            cistern.updateLevel(newLevel, familyService.calculateRemainingDays(cistern, dailyConsumption));
+            cistern.updateLevel(
+                    newLevel, familyService.calculateRemainingDays(cistern.getCurrentLevelLiters(), dailyConsumption));
 
             log.info("Cisterna id: {} | Adicionado: {}L | Novo nível: {}L", cistern.getId(), toFill, newLevel);
 

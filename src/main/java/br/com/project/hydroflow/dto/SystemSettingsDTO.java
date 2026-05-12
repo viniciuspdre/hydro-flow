@@ -9,9 +9,7 @@ import java.math.BigDecimal;
 public record SystemSettingsDTO(
         Long id,
 
-        @NotNull
-        @DecimalMin("0.0")
-        @Schema(description = "Consumo diário de água por pessoa em litros", example = "14.0")
+        @NotNull @DecimalMin("1") @Schema(description = "Consumo diário de água por pessoa em litros", example = "14.0")
         BigDecimal dailyWaterConsumption) {
 
     public static SystemSettingsDTO from(SystemSettings systemSettings) {

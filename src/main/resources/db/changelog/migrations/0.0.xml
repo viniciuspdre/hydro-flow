@@ -359,4 +359,12 @@
         <createSequence sequenceName="hf_cistern_id" startValue="1" incrementBy="1"/>
     </changeSet>
 
+    <changeSet id="20260511-01" author="Lucas Cavalcante">
+        <sql>
+            ALTER TABLE hf_system_settings
+                ADD CONSTRAINT ck_4873926843600
+                    CHECK (daily_water_consumption >= 1)
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

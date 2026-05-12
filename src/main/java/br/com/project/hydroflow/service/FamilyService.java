@@ -102,9 +102,7 @@ public class FamilyService {
                 .map(Cistern::getCurrentLevelLiters)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        int remainingDays = dailyConsumption.compareTo(BigDecimal.ZERO) == 0
-                ? Integer.MAX_VALUE
-                : totalWater.divide(dailyConsumption, 0, RoundingMode.FLOOR).intValue();
+        int remainingDays = calculateRemainingDays(totalWater, dailyConsumption);
 
         LocalDate nextDeliveryDate = LocalDate.now().plusDays(remainingDays);
 
@@ -160,7 +158,7 @@ public class FamilyService {
 
                 remainingConsumption = remainingConsumption.subtract(toConsume);
 
-                int remainingDays = calculateRemainingDays(cistern, dailyConsumption);
+                int remainingDays = calculateRemainingDays(cistern.getCurrentLevelLiters(), dailyConsumption);
 
                 log.info(
                         "Família id: {} | Cisterna id: {} | Consumido: {}L | Novo nível: {}L | Restante consumo: {}L",
@@ -178,11 +176,11 @@ public class FamilyService {
         log.info("Nível das cisternas atualizado para {} famílias", families.size());
     }
 
-    public int calculateRemainingDays(Cistern cistern, BigDecimal dailyConsumption) {
-        if (dailyConsumption.compareTo(BigDecimal.ZERO) == 0) return Integer.MAX_VALUE;
+    public int calculateRemainingDays(BigDecimal waterAmount, BigDecimal dailyConsumption) {
+        if (dailyConsumption.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalStateException("Daily consumption must be greater than zero");
+        }
 
-        return cistern.getCurrentLevelLiters()
-                .divide(dailyConsumption, 0, RoundingMode.FLOOR)
-                .intValue();
+        return waterAmount.divide(dailyConsumption, 0, RoundingMode.FLOOR).intValue();
     }
 }

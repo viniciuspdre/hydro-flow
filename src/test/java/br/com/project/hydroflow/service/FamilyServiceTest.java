@@ -25,6 +25,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -300,25 +302,24 @@ class FamilyServiceTest {
     @DisplayName("calculateRemainingDays")
     class CalculateRemainingDays {
 
-        @Test
-        @DisplayName("deve retornar Integer.MAX_VALUE quando consumo diário for zero")
-        void deveRetornarMaxValueQuandoConsumoZero() {
-            Cistern cistern = new Cistern(new BigDecimal("1000"), new BigDecimal("500"), new Family());
+        @ParameterizedTest(name = "nível {0}L com consumo diário {1}L")
+        @CsvSource({"100, 30, 3, false", "500, 10, 50, false", "999, 100, 9, false", "500, 0, 0, true"})
+        @DisplayName("deve calcular dias restantes conforme nível e consumo diário")
+        void deveCalcularDiasRestantes(
+                String currentLevel, String dailyConsumption, int expectedDays, boolean shouldThrow) {
+            if (shouldThrow) {
+                assertThatThrownBy(() -> familyService.calculateRemainingDays(
+                                new BigDecimal(currentLevel), new BigDecimal(dailyConsumption)))
+                        .isInstanceOf(IllegalStateException.class)
+                        .hasMessage("Daily consumption must be greater than zero");
 
-            int days = familyService.calculateRemainingDays(cistern, BigDecimal.ZERO);
+                return;
+            }
 
-            assertThat(days).isEqualTo(Integer.MAX_VALUE);
-        }
+            int days = familyService.calculateRemainingDays(
+                    new BigDecimal(currentLevel), new BigDecimal(dailyConsumption));
 
-        @Test
-        @DisplayName("deve retornar divisão inteira por baixo do nível pelo consumo diário")
-        void deveRetornarDivisaoInteiraPorBaixo() {
-            Family f = new Family();
-            Cistern cistern = new Cistern(new BigDecimal("1000"), new BigDecimal("100"), f);
-
-            int days = familyService.calculateRemainingDays(cistern, new BigDecimal("30"));
-
-            assertThat(days).isEqualTo(3);
+            assertThat(days).isEqualTo(expectedDays);
         }
     }
 
