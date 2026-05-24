@@ -1,7 +1,6 @@
 package br.com.project.hydroflow.domain;
 
 import jakarta.persistence.*;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -24,8 +23,7 @@ public class Role {
             inverseJoinColumns = @JoinColumn(name = "id_permission"))
     private Set<Permission> permissions = new HashSet<>();
 
-    public Role() {
-    }
+    public Role() {}
 
     public Role(String name) {
         this.name = name;

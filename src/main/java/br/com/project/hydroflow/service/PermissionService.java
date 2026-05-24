@@ -4,11 +4,10 @@ import br.com.project.hydroflow.domain.Permission;
 import br.com.project.hydroflow.dto.PermissionDTO;
 import br.com.project.hydroflow.repository.PermissionRepository;
 import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class PermissionService {

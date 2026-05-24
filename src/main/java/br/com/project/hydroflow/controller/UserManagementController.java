@@ -99,4 +99,18 @@ public class UserManagementController {
             @RequestBody @Valid RoleDTO roleDTO) {
         return ResponseEntity.ok(roleService.updateRole(id, roleDTO));
     }
+
+    @DeleteMapping("/roles/{id}")
+    @AdminOnly
+    @Operation(summary = "Deleta um cargo")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Cargo deletado com sucesso"),
+        @ApiResponse(responseCode = "404", description = "Cargo não encontrado"),
+        @ApiResponse(responseCode = "422", description = "Cargo possui usuários vinculados")
+    })
+    public ResponseEntity<Void> deleteRole(
+            @Parameter(description = "ID do cargo", example = "1") @PathVariable Long id) {
+        roleService.deleteRole(id);
+        return ResponseEntity.noContent().build();
+    }
 }

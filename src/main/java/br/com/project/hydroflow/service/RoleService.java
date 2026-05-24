@@ -6,6 +6,7 @@ import br.com.project.hydroflow.dto.PermissionDTO;
 import br.com.project.hydroflow.dto.RoleDTO;
 import br.com.project.hydroflow.repository.PermissionRepository;
 import br.com.project.hydroflow.repository.RoleRepository;
+import br.com.project.hydroflow.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.HashSet;
 import java.util.List;
@@ -22,10 +23,13 @@ public class RoleService {
 
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
+    private final UserRepository userRepository;
 
-    public RoleService(RoleRepository roleRepository, PermissionRepository permissionRepository) {
+    public RoleService(
+            RoleRepository roleRepository, PermissionRepository permissionRepository, UserRepository userRepository) {
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
+        this.userRepository = userRepository;
     }
 
     public List<RoleDTO> findAllRoles() {
@@ -74,6 +78,12 @@ public class RoleService {
     public void deleteRole(Long id) {
         log.info("Deletando cargo com id: {}", id);
         Role role = findById(id);
+
+        if (userRepository.existsByRole_Id(id)) {
+            log.warn("Não é possível deletar cargo com usuários vinculados. id: {}", id);
+            throw new IllegalStateException("Não é possível deletar cargo com usuários vinculados");
+        }
+
         roleRepository.delete(role);
         log.info("Cargo deletado com sucesso. id: {}", id);
     }
