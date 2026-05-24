@@ -67,7 +67,6 @@ public class AuthController {
     }
 
     @PatchMapping("/change-password")
-    @AuthenticatedOnly
     @Operation(summary = "Troca a senha no primeiro acesso")
     public ResponseEntity<TokenDTO> changePassword(@RequestBody @Valid ChangePasswordDTO dto) {
         User user =
