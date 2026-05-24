@@ -1,9 +1,16 @@
 package br.com.project.hydroflow.service;
 
+import br.com.project.hydroflow.domain.Permission;
 import br.com.project.hydroflow.domain.Role;
+import br.com.project.hydroflow.dto.PermissionDTO;
 import br.com.project.hydroflow.dto.RoleDTO;
+import br.com.project.hydroflow.repository.PermissionRepository;
 import br.com.project.hydroflow.repository.RoleRepository;
 import jakarta.persistence.EntityNotFoundException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -14,9 +21,16 @@ public class RoleService {
     private static final Logger log = LoggerFactory.getLogger(RoleService.class);
 
     private final RoleRepository roleRepository;
+    private final PermissionRepository permissionRepository;
 
-    public RoleService(RoleRepository roleRepository) {
+    public RoleService(RoleRepository roleRepository, PermissionRepository permissionRepository) {
         this.roleRepository = roleRepository;
+        this.permissionRepository = permissionRepository;
+    }
+
+    public List<RoleDTO> findAllRoles() {
+        log.info("Listando todos os cargos");
+        return roleRepository.findAll().stream().map(RoleDTO::from).toList();
     }
 
     public Role findById(Long id) {
@@ -30,6 +44,11 @@ public class RoleService {
     public RoleDTO saveRole(RoleDTO roleDTO) {
         log.info("Criando cargo: {}", roleDTO.name());
         Role role = new Role(roleDTO.name());
+
+        if (roleDTO.permissions() != null && !roleDTO.permissions().isEmpty()) {
+            role.getPermissions().addAll(resolvePermissions(roleDTO.permissions()));
+        }
+
         RoleDTO roleCreated = RoleDTO.from(roleRepository.save(role));
         log.info("Cargo criado com sucesso. id: {}", roleCreated.id());
         return roleCreated;
@@ -39,6 +58,14 @@ public class RoleService {
         log.info("Atualizando cargo com id: {}", id);
         Role role = findById(id);
         role.setName(roleDTO.name());
+
+        if (roleDTO.permissions() != null) {
+            role.getPermissions().clear();
+            if (!roleDTO.permissions().isEmpty()) {
+                role.getPermissions().addAll(resolvePermissions(roleDTO.permissions()));
+            }
+        }
+
         RoleDTO roleUpdated = RoleDTO.from(roleRepository.save(role));
         log.info("Cargo atualizado com sucesso. id: {}", id);
         return roleUpdated;
@@ -49,5 +76,25 @@ public class RoleService {
         Role role = findById(id);
         roleRepository.delete(role);
         log.info("Cargo deletado com sucesso. id: {}", id);
+    }
+
+    private Set<Permission> resolvePermissions(List<PermissionDTO> permissionDTOs) {
+        List<Long> permissionIds = permissionDTOs.stream()
+                .map(PermissionDTO::id)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (permissionIds.isEmpty()) {
+            return Set.of();
+        }
+
+        List<Permission> permissions = permissionRepository.findAllById(permissionIds);
+        if (permissions.size() != permissionIds.size()) {
+            log.warn("Permissão não encontrada ao vincular ao cargo. ids: {}", permissionIds);
+            throw new EntityNotFoundException("Permissão não encontrada");
+        }
+
+        return new HashSet<>(permissions);
     }
 }

@@ -28,7 +28,7 @@
         <addPrimaryKey tableName="hf_role" columnNames="id" constraintName="pk_role"/>
 
         <!-- Sequence -->
-        <createSequence sequenceName="hf_role_id" incrementBy="1" startValue="1"/>
+        <createSequence sequenceName="hf_role_id" incrementBy="1" startValue="2"/>
     </changeSet>
 
     <changeSet id="20260312-02" author="Lucas Cavalcante">
@@ -64,7 +64,7 @@
         <addPrimaryKey tableName="hf_user" columnNames="id" constraintName="pk_user"/>
 
         <!-- Sequence -->
-        <createSequence sequenceName="hf_user_id" incrementBy="1" startValue="1"/>
+        <createSequence sequenceName="hf_user_id" incrementBy="1" startValue="2"/>
 
         <!-- Foreign Keys -->
         <addForeignKeyConstraint baseTableName="hf_user" baseColumnNames="id_role"
@@ -88,33 +88,40 @@
             <column name="name" type="VARCHAR(100)">
                 <constraints nullable="false" unique="true"/>
             </column>
+            <column name="label" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
 
         <!-- Primary Key -->
         <addPrimaryKey tableName="hf_permission" columnNames="id" constraintName="pk_permission"/>
 
         <!-- Sequence -->
-        <createSequence sequenceName="hf_permission_id" incrementBy="1" startValue="1"/>
+        <createSequence sequenceName="hf_permission_id" incrementBy="1" startValue="5"/>
 
         <!-- Dados iniciais -->
         <insert tableName="hf_permission">
             <column name="id" value="1"/>
             <column name="name" value="REGISTER_DELIVERY"/>
+            <column name="label" value="Registrar Entrega"/>
         </insert>
 
         <insert tableName="hf_permission">
             <column name="id" value="2"/>
             <column name="name" value="EDIT_FAMILY"/>
+            <column name="label" value="Editar Família"/>
         </insert>
 
         <insert tableName="hf_permission">
             <column name="id" value="3"/>
             <column name="name" value="MANAGE_USERS"/>
+            <column name="label" value="Gerenciar Usuários"/>
         </insert>
 
         <insert tableName="hf_permission">
             <column name="id" value="4"/>
             <column name="name" value="ADMIN"/>
+            <column name="label" value="Administrador"/>
         </insert>
     </changeSet>
 
@@ -365,6 +372,37 @@
                 ADD CONSTRAINT ck_4873926843600
                     CHECK (daily_water_consumption >= 1)
         </sql>
+    </changeSet>
+
+    <changeSet id="20260524-01" author="Lucas Cavalcante">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="hf_permission" columnName="label"/>
+            </not>
+        </preConditions>
+
+        <addColumn tableName="hf_permission">
+            <column name="label" type="VARCHAR(100)"/>
+        </addColumn>
+
+        <update tableName="hf_permission">
+            <column name="label" value="Registrar Entrega"/>
+            <where>name = 'REGISTER_DELIVERY'</where>
+        </update>
+        <update tableName="hf_permission">
+            <column name="label" value="Editar Família"/>
+            <where>name = 'EDIT_FAMILY'</where>
+        </update>
+        <update tableName="hf_permission">
+            <column name="label" value="Gerenciar Usuários"/>
+            <where>name = 'MANAGE_USERS'</where>
+        </update>
+        <update tableName="hf_permission">
+            <column name="label" value="Administrador"/>
+            <where>name = 'ADMIN'</where>
+        </update>
+
+        <addNotNullConstraint tableName="hf_permission" columnName="label" columnDataType="VARCHAR(100)"/>
     </changeSet>
 
 </databaseChangeLog>

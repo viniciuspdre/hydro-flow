@@ -5,6 +5,7 @@ import br.com.project.hydroflow.domain.User;
 import br.com.project.hydroflow.dto.UserDTO;
 import br.com.project.hydroflow.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -24,6 +25,11 @@ public class UserService {
         this.userRepository = userRepository;
         this.roleService = roleService;
         this.passwordEncoder = passwordEncoder;
+    }
+
+    public List<UserDTO> findAllUsers() {
+        log.info("Listando todos os usuários");
+        return userRepository.findAll().stream().map(UserDTO::from).toList();
     }
 
     public UserDTO saveUser(UserDTO userDTO) {

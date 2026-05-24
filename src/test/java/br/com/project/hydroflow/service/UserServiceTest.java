@@ -17,6 +17,7 @@ import br.com.project.hydroflow.repository.UserRepository;
 import br.com.project.hydroflow.security.Permissions;
 import jakarta.persistence.EntityNotFoundException;
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -44,6 +45,30 @@ class UserServiceTest {
 
     @InjectMocks
     private UserService userService;
+
+    @Nested
+    @DisplayName("findAllUsers")
+    class FindAllUsers {
+
+        @Test
+        @DisplayName("deve retornar todos os usuários como DTO sem senha")
+        void deveRetornarTodosOsUsuariosComoDtoSemSenha() {
+            Role role = roleWithId(1L, "ADMIN");
+            User user1 = userWithId(1L, "Maria", "maria@example.com", "hash1", role);
+            User user2 = userWithId(2L, "João", "joao@example.com", "hash2", role);
+            when(userRepository.findAll()).thenReturn(List.of(user1, user2));
+
+            List<UserDTO> result = userService.findAllUsers();
+
+            assertThat(result).hasSize(2);
+            assertThat(result.get(0).id()).isEqualTo(1L);
+            assertThat(result.get(0).name()).isEqualTo("Maria");
+            assertThat(result.get(0).password()).isNull();
+            assertThat(result.get(1).id()).isEqualTo(2L);
+            assertThat(result.get(1).email()).isEqualTo("joao@example.com");
+            verify(userRepository).findAll();
+        }
+    }
 
     @Nested
     @DisplayName("saveUser")

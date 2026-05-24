@@ -14,9 +14,20 @@ public class Permission {
     @Column(name = "name", nullable = false, unique = true)
     private String name;
 
+    @Column(name = "label", nullable = false)
+    private String label;
+
     public Permission() {}
+
+    public Long getId() {
+        return id;
+    }
 
     public String getName() {
         return name;
+    }
+
+    public String getLabel() {
+        return label;
     }
 }
