@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import br.com.project.hydroflow.domain.Permission;
 import br.com.project.hydroflow.domain.Role;
 import br.com.project.hydroflow.domain.User;
+import br.com.project.hydroflow.dto.UpdateUserDTO;
 import br.com.project.hydroflow.dto.UserDTO;
 import br.com.project.hydroflow.repository.UserRepository;
 import br.com.project.hydroflow.security.Permissions;
@@ -120,10 +121,10 @@ class UserServiceTest {
             when(passwordEncoder.encode("novaSenha12")).thenReturn("hash-nova");
             when(userRepository.save(existing)).thenReturn(existing);
 
-            UserDTO input = new UserDTO(null, "Novo Nome", "novo@example.com", "novaSenha12", null);
+            UpdateUserDTO input = new UpdateUserDTO("Novo Nome", "novo@example.com");
             Authentication auth = authenticationWithPrincipal(principalComPermissoes(Permissions.REGISTER_DELIVERY));
 
-            UserDTO result = userService.updateUser(1L, input, auth);
+            UserDTO result = userService.updateUser(1L, input);
 
             assertThat(result.name()).isEqualTo("Novo Nome");
             assertThat(result.email()).isEqualTo("novo@example.com");
@@ -142,10 +143,10 @@ class UserServiceTest {
             when(userRepository.findById(2L)).thenReturn(Optional.of(existing));
             when(userRepository.save(existing)).thenReturn(existing);
 
-            UserDTO input = new UserDTO(null, "User X", "ux@example.com", null, null);
+            UpdateUserDTO input = new UpdateUserDTO("User X", "ux@example.com");
             Authentication auth = authenticationWithPrincipal(principalComPermissoes(Permissions.REGISTER_DELIVERY));
 
-            userService.updateUser(2L, input, auth);
+            userService.updateUser(2L, input);
 
             assertThat(existing.getPassword()).isEqualTo("hash-original");
             verify(passwordEncoder, never()).encode(any());
@@ -160,10 +161,10 @@ class UserServiceTest {
             when(userRepository.findById(3L)).thenReturn(Optional.of(existing));
             when(userRepository.save(existing)).thenReturn(existing);
 
-            UserDTO input = new UserDTO(null, "User X", "ux@example.com", "   ", null);
+            UpdateUserDTO input = new UpdateUserDTO("User X", "ux@example.com");
             Authentication auth = authenticationWithPrincipal(principalComPermissoes(Permissions.EDIT_FAMILY));
 
-            userService.updateUser(3L, input, auth);
+            userService.updateUser(3L, input);
 
             assertThat(existing.getPassword()).isEqualTo("hash-original");
             verify(passwordEncoder, never()).encode(any());
@@ -180,10 +181,10 @@ class UserServiceTest {
             when(roleService.findById(5L)).thenReturn(newRole);
             when(userRepository.save(existing)).thenReturn(existing);
 
-            UserDTO input = new UserDTO(null, "Alvo", "alvo@example.com", null, 5L);
+            UpdateUserDTO input = new UpdateUserDTO("Alvo", "alvo@example.com");
             Authentication auth = authenticationWithPrincipal(principalComPermissoes(Permissions.ADMIN));
 
-            userService.updateUser(4L, input, auth);
+            userService.updateUser(4L, input);
 
             assertThat(existing.getRole()).isSameAs(newRole);
             verify(roleService).findById(5L);
@@ -200,10 +201,10 @@ class UserServiceTest {
             when(roleService.findById(6L)).thenReturn(newRole);
             when(userRepository.save(existing)).thenReturn(existing);
 
-            UserDTO input = new UserDTO(null, "Alvo", "alvo2@example.com", null, 6L);
+            UpdateUserDTO input = new UpdateUserDTO("Alvo", "alvo2@example.com");
             Authentication auth = authenticationWithPrincipal(principalComPermissoes(Permissions.MANAGE_USERS));
 
-            userService.updateUser(5L, input, auth);
+            userService.updateUser(5L, input);
 
             assertThat(existing.getRole()).isSameAs(newRole);
             verify(roleService).findById(6L);
@@ -217,10 +218,10 @@ class UserServiceTest {
             when(userRepository.findById(6L)).thenReturn(Optional.of(existing));
             when(userRepository.save(existing)).thenReturn(existing);
 
-            UserDTO input = new UserDTO(null, "Alvo", "alvo3@example.com", null, 99L);
+            UpdateUserDTO input = new UpdateUserDTO("Alvo", "alvo3@example.com");
             Authentication auth = authenticationWithPrincipal(principalComPermissoes(Permissions.EDIT_FAMILY));
 
-            userService.updateUser(6L, input, auth);
+            userService.updateUser(6L, input);
 
             assertThat(existing.getRole()).isSameAs(oldRole);
             verify(roleService, never()).findById(anyLong());
@@ -231,10 +232,10 @@ class UserServiceTest {
         void deveLancarEntityNotFoundExceptionQuandoIdNaoExistir() {
             when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-            UserDTO input = new UserDTO(null, "X", "x@example.com", "senha1234", 1L);
+            UpdateUserDTO input = new UpdateUserDTO("X", "x@example.com");
             Authentication auth = authenticationWithPrincipal(principalComPermissoes(Permissions.ADMIN));
 
-            assertThatThrownBy(() -> userService.updateUser(99L, input, auth))
+            assertThatThrownBy(() -> userService.updateUser(99L, input))
                     .isInstanceOf(EntityNotFoundException.class)
                     .hasMessageContaining("99");
 

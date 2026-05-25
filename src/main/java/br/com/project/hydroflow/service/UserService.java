@@ -2,13 +2,13 @@ package br.com.project.hydroflow.service;
 
 import br.com.project.hydroflow.domain.Role;
 import br.com.project.hydroflow.domain.User;
+import br.com.project.hydroflow.dto.UpdateUserDTO;
 import br.com.project.hydroflow.dto.UserDTO;
 import br.com.project.hydroflow.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -41,28 +41,14 @@ public class UserService {
         return userCreated;
     }
 
-    public UserDTO updateUser(Long id, UserDTO userDTO, Authentication authentication) {
-        User usuarioAutenticado = (User) authentication.getPrincipal();
+    public UserDTO updateUser(Long id, UpdateUserDTO updateUserDTO) {
         User user = userRepository.findById(id).orElseThrow(() -> {
             log.warn("Usuário não encontrado para atualização. id: {}", id);
             return new EntityNotFoundException("Usuário não encontrado: " + id);
         });
 
-        user.setName(userDTO.name());
-        user.setEmail(userDTO.email());
-
-        if (userDTO.password() != null && !userDTO.password().isBlank()) {
-            user.setPassword(passwordEncoder.encode(userDTO.password()));
-        }
-
-        // Só admin ou quem pode gerenciar usuários podem alterar o cargo (nomes alinhados à tabela hf_permission)
-        boolean isAdmin = usuarioAutenticado.getAuthorities().stream()
-                .anyMatch(a ->
-                        a.getAuthority().equals("ADMIN") || a.getAuthority().equals("MANAGE_USERS"));
-
-        if (isAdmin && userDTO.roleId() != null) {
-            user.setRole(roleService.findById(userDTO.roleId()));
-        }
+        user.setName(updateUserDTO.name());
+        user.setEmail(updateUserDTO.email());
 
         UserDTO userUpdated = UserDTO.from(userRepository.save(user));
         log.info("Usuário atualizado com sucesso. id: {}", id);

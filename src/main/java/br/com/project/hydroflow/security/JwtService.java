@@ -1,11 +1,13 @@
 package br.com.project.hydroflow.security;
 
+import br.com.project.hydroflow.domain.Permission;
 import br.com.project.hydroflow.domain.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import java.util.Date;
+import java.util.List;
 import javax.crypto.SecretKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +28,15 @@ public class JwtService {
 
     public String generateToken(User user) {
         log.info("Gerando token para usuário: {}", user.getEmail());
+
+        List<String> permissions = user.getRole().getPermissions().stream()
+                .map(Permission::getName)
+                .toList();
+
         return Jwts.builder()
                 .subject(user.getEmail())
+                .claim("userId", user.getId())
+                .claim("permissions", permissions) // <-- aqui
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey())

@@ -1,7 +1,9 @@
 package br.com.project.hydroflow.controller;
 
+import br.com.project.hydroflow.dto.UpdateUserDTO;
 import br.com.project.hydroflow.dto.UserDTO;
 import br.com.project.hydroflow.security.annotation.AdminOrManageUsers;
+import br.com.project.hydroflow.security.annotation.AuthenticatedOnly;
 import br.com.project.hydroflow.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,8 +13,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -53,7 +53,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("@authorizationService.isAdminOrOwner(#id, authentication)")
+    @AuthenticatedOnly
     @Operation(summary = "Atualiza um usuário")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Usuário atualizado com sucesso"),
@@ -64,8 +64,7 @@ public class UserController {
     })
     public ResponseEntity<UserDTO> updateUser(
             @Parameter(description = "ID do usuário", example = "1") @PathVariable Long id,
-            @RequestBody @Valid UserDTO userDTO,
-            Authentication authentication) {
-        return ResponseEntity.ok(userService.updateUser(id, userDTO, authentication));
+            @RequestBody @Valid UpdateUserDTO updateUserDTO) {
+        return ResponseEntity.ok(userService.updateUser(id, updateUserDTO));
     }
 }

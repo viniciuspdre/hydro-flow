@@ -17,6 +17,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -74,6 +75,29 @@ public class AuthController {
 
         user.setPassword(passwordEncoder.encode(dto.newPassword()));
         user.setFirstAccess(false);
+        userRepository.save(user);
+
+        return ResponseEntity.ok(new TokenDTO(jwtService.generateToken(user)));
+    }
+
+    @PatchMapping("/update-password")
+    @AuthenticatedOnly
+    @Operation(summary = "Troca a senha do usuário autenticado")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Senha alterada com sucesso"),
+        @ApiResponse(responseCode = "400", description = "Senha atual inválida"),
+        @ApiResponse(responseCode = "401", description = "Não autenticado"),
+        @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+    })
+    public ResponseEntity<TokenDTO> updatePassword(@RequestBody @Valid ChangePasswordDTO dto) {
+        User user =
+                userRepository.findById(dto.userId()).orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(dto.currentPassword(), user.getPassword())) {
+            throw new BadCredentialsException("Senha atual inválida");
+        }
+
+        user.setPassword(passwordEncoder.encode(dto.newPassword()));
         userRepository.save(user);
 
         return ResponseEntity.ok(new TokenDTO(jwtService.generateToken(user)));
