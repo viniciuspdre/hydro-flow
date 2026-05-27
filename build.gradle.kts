@@ -68,6 +68,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-security-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+    testImplementation("org.instancio:instancio-junit:5.4.0")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
