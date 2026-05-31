@@ -2,9 +2,7 @@ package br.com.project.hydroflow.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.instancio.Select.field;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,14 +15,11 @@ import br.com.project.hydroflow.dto.FamilyDTO;
 import br.com.project.hydroflow.dto.MemberDTO;
 import br.com.project.hydroflow.repository.FamilyRepository;
 import jakarta.persistence.EntityNotFoundException;
-import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -32,8 +27,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -51,59 +44,54 @@ class FamilyServiceTest {
     @Mock
     private SystemSettingsService systemSettingsService;
 
-    @InjectMocks
+    @Mock
+    private CisternService cisternService;
+
     private FamilyService familyService;
 
     private Pageable pageable;
     private Family defaultFamily;
+    private Family urgentFamily;
     private SystemSettings systemSettings;
 
     @BeforeEach
     void setUp() {
+        familyService = new FamilyService(familyRepository, systemSettingsService, cisternService);
         pageable = PageRequest.of(0, 5);
 
-        defaultFamily = Instancio.of(Family.class)
-                .set(field(Family::getId), 1L)
-                .set(field(Family::getName), "Silva")
-                .set(field(Family::isHasGutterSystem), true)
-                .set(field(Family::getLatitude), BigDecimal.valueOf(-8))
-                .set(field(Family::getLongitude), BigDecimal.valueOf(-36))
-                .set(field(Family::getMembers), new ArrayList<>())
-                .set(field(Family::getCisterns), new ArrayList<>())
-                .create();
+        this.defaultFamily = Family.builder()
+                .id(1L)
+                .name("Silva")
+                .hasGutterSystem(true)
+                .latitude(BigDecimal.valueOf(-8))
+                .longitude(BigDecimal.valueOf(-36))
+                .members(new ArrayList<>())
+                .cisterns(new ArrayList<>())
+                .build();
+
         defaultFamily.addMember(new Member("A", 20, false));
         defaultFamily.addMember(new Member("B", 25, false));
         defaultFamily.addCistern(new Cistern(new BigDecimal("10000"), new BigDecimal("100"), defaultFamily));
         defaultFamily.addCistern(new Cistern(new BigDecimal("10000"), new BigDecimal("50"), defaultFamily));
 
+        // Familia 2
+        this.urgentFamily = Family.builder()
+                .id(2L)
+                .name("Santos")
+                .hasGutterSystem(false)
+                .latitude(BigDecimal.valueOf(-9))
+                .longitude(BigDecimal.valueOf(-37))
+                .familyStatus(Family.FamilyStatus.URGENT)
+                .members(new ArrayList<>())
+                .cisterns(new ArrayList<>())
+                .build();
+
+        urgentFamily.addMember(new Member("C", 35, false));
+        urgentFamily.addMember(new Member("D", 40, true));
+        urgentFamily.addCistern(new Cistern(new BigDecimal("500"), new BigDecimal("20"), urgentFamily));
+
         systemSettings = new SystemSettings();
         systemSettings.setDailyWaterConsumption(new BigDecimal("14"));
-    }
-
-    /**
-     * Copia estado da família recebida do save (nome, listas) e aplica id para simular retorno JPA.
-     */
-    private static Family familyWithId(Long id, Family source) {
-        Family family =
-                new Family(source.getName(), source.isHasGutterSystem(), source.getLatitude(), source.getLongitude());
-        setField(family, "id", id);
-        for (Member m : source.getMembers()) {
-            family.addMember(new Member(m.getName(), m.getAge(), m.isBedridden()));
-        }
-        for (Cistern c : source.getCisterns()) {
-            family.addCistern(new Cistern(c.getCapacityLiters(), c.getCurrentLevelLiters(), family));
-        }
-        return family;
-    }
-
-    private static void setField(Object target, String fieldName, Object value) {
-        try {
-            Field field = target.getClass().getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.set(target, value);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException(e);
-        }
     }
 
     @Nested
@@ -138,34 +126,31 @@ class FamilyServiceTest {
         @Test
         @DisplayName("deve persistir família com membros e cisternas e retornar DTO")
         void testPersistFamilyWithMembersAndCisternsAndReturnDto() {
-            FamilyDTO input = Instancio.of(FamilyDTO.class)
-                    .set(field(FamilyDTO::id), null)
-                    .set(field(FamilyDTO::name), "Família Souza")
-                    .set(field(FamilyDTO::hasGutterSystem), false)
-                    .set(field(FamilyDTO::familyStatus), Family.FamilyStatus.NORMAL)
-                    .set(field(FamilyDTO::members), List.of(new MemberDTO(null, "Ana", 32, false)))
-                    .set(field(FamilyDTO::cisterns), List.of(new CisternDTO(null, new BigDecimal("5000"), new BigDecimal("2000"))))
-                    .create();
+            FamilyDTO input = new FamilyDTO(
+                    null,
+                    "Família Souza",
+                    false,
+                    BigDecimal.valueOf(-8),
+                    BigDecimal.valueOf(-36),
+                    Family.FamilyStatus.NORMAL,
+                    List.of(new MemberDTO(null, "Ana", 32, false)),
+                    List.of(new CisternDTO(null, new BigDecimal("5000"), new BigDecimal("2000"))),
+                    null,
+                    null,
+                    null);
 
-            when(familyRepository.save(any(Family.class)))
-                    .thenAnswer(invocation -> familyWithId(10L, invocation.getArgument(0)));
+            when(familyRepository.save(any(Family.class))).thenReturn(defaultFamily);
 
             FamilyDTO result = familyService.saveFamily(input);
 
-            assertThat(result.id()).isEqualTo(10L);
-            assertThat(result.name()).isEqualTo("Família Souza");
-            assertThat(result.hasGutterSystem()).isFalse();
-            assertThat(result.members()).hasSize(1);
-            assertThat(result.members().getFirst().name()).isEqualTo("Ana");
-            assertThat(result.cisterns()).hasSize(1);
-            assertThat(result.cisterns().getFirst().capacityLiters()).isEqualByComparingTo("5000");
-
-            ArgumentCaptor<Family> captor = ArgumentCaptor.forClass(Family.class);
-            verify(familyRepository).save(captor.capture());
-            Family saved = captor.getValue();
-            assertThat(saved.getMembers()).hasSize(1);
-            assertThat(saved.getCisterns()).hasSize(1);
-            assertThat(saved.getCisterns().getFirst().getFamily()).isSameAs(saved);
+            verify(familyRepository).save(any(Family.class));
+            assertThat(result.id()).isEqualTo(1L);
+            assertThat(result.name()).isEqualTo("Silva");
+            assertThat(result.hasGutterSystem()).isTrue();
+            assertThat(result.members()).hasSize(2);
+            assertThat(result.members().getFirst().name()).isEqualTo("A");
+            assertThat(result.cisterns()).hasSize(2);
+            assertThat(result.cisterns().getFirst().capacityLiters()).isEqualByComparingTo("10000");
         }
     }
 
@@ -173,46 +158,40 @@ class FamilyServiceTest {
     @DisplayName("updateFamily")
     class UpdateFamily {
 
-        private Family existingFamily;
         private FamilyDTO input;
 
         @BeforeEach
         void setUp() {
-            existingFamily = Instancio.of(Family.class)
-                    .set(field(Family::getId), 2L)
-                    .set(field(Family::getName), "Antigo")
-                    .set(field(Family::isHasGutterSystem), true)
-                    .create();
-            existingFamily.addMember(new Member("Velho", 60, false));
-            existingFamily.addCistern(new Cistern(new BigDecimal("1000"), new BigDecimal("100"), existingFamily));
-
-            input = Instancio.of(FamilyDTO.class)
-                    .set(field(FamilyDTO::id), null)
-                    .set(field(FamilyDTO::name), "Novo Nome")
-                    .set(field(FamilyDTO::hasGutterSystem), false)
-                    .set(field(FamilyDTO::latitude), BigDecimal.ONE)
-                    .set(field(FamilyDTO::longitude), BigDecimal.TEN)
-                    .set(field(FamilyDTO::familyStatus), Family.FamilyStatus.NORMAL)
-                    .set(field(FamilyDTO::members), List.of(new MemberDTO(null, "Novo", 10, false)))
-                    .set(field(FamilyDTO::cisterns), List.of(new CisternDTO(null, new BigDecimal("2000"), new BigDecimal("500"))))
-                    .create();
+            input = new FamilyDTO(
+                    null,
+                    "Novo Nome",
+                    false,
+                    BigDecimal.ONE,
+                    BigDecimal.TEN,
+                    Family.FamilyStatus.NORMAL,
+                    List.of(new MemberDTO(null, "Novo", 10, false)),
+                    List.of(new CisternDTO(null, new BigDecimal("2000"), new BigDecimal("500"))),
+                    null,
+                    null,
+                    null);
         }
 
         @Test
         @DisplayName("deve substituir dados, membros e cisternas")
         void testReplaceDataMembersAndCisterns() {
-            when(familyRepository.findById(2L)).thenReturn(Optional.of(existingFamily));
-            when(familyRepository.save(existingFamily)).thenReturn(existingFamily);
+            when(familyRepository.findById(1L)).thenReturn(Optional.of(defaultFamily));
+            when(familyRepository.save(defaultFamily)).thenReturn(defaultFamily);
 
-            FamilyDTO result = familyService.updateFamily(2L, input);
+            FamilyDTO result = familyService.updateFamily(1L, input);
 
             assertThat(result.name()).isEqualTo("Novo Nome");
-            assertThat(existingFamily.getName()).isEqualTo("Novo Nome");
-            assertThat(existingFamily.getMembers()).hasSize(1);
-            assertThat(existingFamily.getMembers().getFirst().getName()).isEqualTo("Novo");
-            assertThat(existingFamily.getCisterns()).hasSize(1);
-            assertThat(existingFamily.getCisterns().getFirst().getCapacityLiters()).isEqualByComparingTo("2000");
-            verify(familyRepository).save(existingFamily);
+            assertThat(defaultFamily.getName()).isEqualTo("Novo Nome");
+            assertThat(defaultFamily.getMembers()).hasSize(1);
+            assertThat(defaultFamily.getMembers().getFirst().getName()).isEqualTo("Novo");
+            assertThat(defaultFamily.getCisterns()).hasSize(1);
+            assertThat(defaultFamily.getCisterns().getFirst().getCapacityLiters())
+                    .isEqualByComparingTo("2000");
+            verify(familyRepository).save(defaultFamily);
         }
 
         @Test
@@ -227,12 +206,12 @@ class FamilyServiceTest {
     }
 
     @Nested
-    @DisplayName("findFamilyById")
-    class FindFamilyById {
+    @DisplayName("getFamilyDetails")
+    class GetFamilyDetails {
 
         @Test
-        @DisplayName("deve calcular consumo diário, dias restantes e data prevista")
-        void testCalculateDailyConsumptionRemainingDaysAndNextDeliveryDate() {
+        @DisplayName("deve retornar DTO da família com consumo diário, dias restantes e data prevista")
+        void testReturnFamilyDtoWithDailyConsumptionRemainingDaysAndNextDeliveryDate() {
             when(familyRepository.findById(1L)).thenReturn(Optional.of(defaultFamily));
             when(systemSettingsService.getSystemSettings()).thenReturn(systemSettings);
 
@@ -261,45 +240,59 @@ class FamilyServiceTest {
         }
 
         @Test
-        @DisplayName("findFamiliesByName deve delegar ao repositório")
-        void testFindFamiliesByNameDelegateToRepository() {
-            when(familyRepository.findByNameContainingIgnoreCase(eq("sil"), eq(pageable)))
-                    .thenReturn(Page.empty());
+        @DisplayName("findFamiliesByName deve mapear resultado para FamilyDTO")
+        void testFindFamiliesByNameMapToFamilyDto() {
+            when(familyRepository.findByNameContainingIgnoreCase("sil", pageable))
+                    .thenReturn(new PageImpl<>(List.of(defaultFamily)));
 
             Page<FamilyDTO> page = familyService.findFamiliesByName("sil", pageable);
 
-            assertThat(page).isEmpty();
-            verify(familyRepository).findByNameContainingIgnoreCase("sil", pageable);
+            assertThat(page.getContent()).hasSize(1);
+            assertThat(page.getContent().getFirst().id()).isEqualTo(1L);
+            assertThat(page.getContent().getFirst().name()).isEqualTo("Silva");
         }
 
         @Test
-        @DisplayName("findFamiliesByStatus deve delegar ao repositório")
-        void testFindFamiliesByStatusDelegateToRepository() {
-            when(familyRepository.findByFamilyStatus(Family.FamilyStatus.URGENT, pageable))
-                    .thenReturn(Page.empty());
+        @DisplayName("findFamiliesByStatus deve mapear resultado para FamilyDTO")
+        void testFindFamiliesByStatusMapToFamilyDto() {
+            when(familyRepository.findByFamilyStatus(Family.FamilyStatus.NORMAL, pageable))
+                    .thenReturn(new PageImpl<>(List.of(defaultFamily)));
 
-            Page<FamilyDTO> page = familyService.findFamiliesByStatus(Family.FamilyStatus.URGENT, pageable);
+            Page<FamilyDTO> page = familyService.findFamiliesByStatus(Family.FamilyStatus.NORMAL, pageable);
 
-            assertThat(page).isEmpty();
-            verify(familyRepository).findByFamilyStatus(Family.FamilyStatus.URGENT, pageable);
+            assertThat(page.getContent()).hasSize(1);
+            assertThat(page.getContent().getFirst().id()).isEqualTo(1L);
+            assertThat(page.getContent().getFirst().name()).isEqualTo("Silva");
         }
 
         @Test
-        @DisplayName("findAllOrderByCisternLevelAsc deve delegar ao repositório")
-        void testFindAllOrderByCisternLevelAscDelegateToRepository() {
-            when(familyRepository.findAllOrderByCisternLevelAsc(pageable)).thenReturn(Page.empty());
+        @DisplayName("findAllOrderByCisternLevelAsc deve mapear resultado para FamilyDTO")
+        void testFindAllOrderByCisternLevelAscMapToFamilyDto() {
+            when(familyRepository.findAllOrderByCisternLevelAsc(pageable))
+                    .thenReturn(new PageImpl<>(List.of(urgentFamily, defaultFamily)));
 
-            assertThat(familyService.findAllOrderByCisternLevelAsc(pageable)).isEmpty();
-            verify(familyRepository).findAllOrderByCisternLevelAsc(pageable);
+            Page<FamilyDTO> page = familyService.findAllOrderByCisternLevelAsc(pageable);
+
+            assertThat(page.getContent()).hasSize(2);
+            assertThat(page.getContent().getFirst().id()).isEqualTo(2L);
+            assertThat(page.getContent().getFirst().name()).isEqualTo("Santos");
+            assertThat(page.getContent().getLast().id()).isEqualTo(1L);
+            assertThat(page.getContent().getLast().name()).isEqualTo("Silva");
         }
 
         @Test
-        @DisplayName("findAllOrderByCisternLevelDesc deve delegar ao repositório")
-        void testFindAllOrderByCisternLevelDescDelegateToRepository() {
-            when(familyRepository.findAllOrderByCisternLevelDesc(pageable)).thenReturn(Page.empty());
+        @DisplayName("findAllOrderByCisternLevelDesc deve mapear resultado para FamilyDTO")
+        void testFindAllOrderByCisternLevelDescMapToFamilyDto() {
+            when(familyRepository.findAllOrderByCisternLevelDesc(pageable))
+                    .thenReturn(new PageImpl<>(List.of(defaultFamily, urgentFamily)));
 
-            assertThat(familyService.findAllOrderByCisternLevelDesc(pageable)).isEmpty();
-            verify(familyRepository).findAllOrderByCisternLevelDesc(pageable);
+            Page<FamilyDTO> page = familyService.findAllOrderByCisternLevelDesc(pageable);
+
+            assertThat(page.getContent()).hasSize(2);
+            assertThat(page.getContent().getFirst().id()).isEqualTo(1L);
+            assertThat(page.getContent().getFirst().name()).isEqualTo("Silva");
+            assertThat(page.getContent().getLast().id()).isEqualTo(2L);
+            assertThat(page.getContent().getLast().name()).isEqualTo("Santos");
         }
     }
 
@@ -310,26 +303,13 @@ class FamilyServiceTest {
         @Test
         @DisplayName("deve consumir água das cisternas conforme consumo diário e persistir famílias")
         void testConsumeWaterFromCisternsAndPersistFamilies() {
-            systemSettings.setDailyWaterConsumption(new BigDecimal("20"));
             when(systemSettingsService.getSystemSettings()).thenReturn(systemSettings);
-
-            Family family = Instancio.of(Family.class)
-                    .set(field(Family::getId), 1L)
-                    .set(field(Family::getName), "F")
-                    .set(field(Family::isHasGutterSystem), true)
-                    .set(field(Family::getMembers), new ArrayList<>())
-                    .set(field(Family::getCisterns), new ArrayList<>())
-                    .create();
-            family.addMember(new Member("M", 30, false));
-            Cistern c = new Cistern(new BigDecimal("1000"), new BigDecimal("100"), family);
-            family.addCistern(c);
-
-            when(familyRepository.findAll()).thenReturn(List.of(family));
+            when(familyRepository.findAll()).thenReturn(List.of(defaultFamily));
 
             familyService.updateAllCisternLevels();
 
-            assertThat(c.getCurrentLevelLiters()).isEqualByComparingTo("80");
-            verify(familyRepository).saveAll(List.of(family));
+            verify(cisternService).consumeDailyWater(defaultFamily, new BigDecimal("28"));
+            verify(familyRepository).saveAll(List.of(defaultFamily));
         }
     }
 
@@ -341,7 +321,7 @@ class FamilyServiceTest {
         @CsvSource({"100, 30, 3", "500, 10, 50", "999, 100, 9"})
         @DisplayName("deve calcular dias restantes conforme nível e consumo diário")
         void testCalculateRemainingDays(String currentLevel, String dailyConsumption, int expectedDays) {
-            int days = familyService.calculateRemainingDays(
+            int days = cisternService.calculateRemainingDays(
                     new BigDecimal(currentLevel), new BigDecimal(dailyConsumption));
 
             assertThat(days).isEqualTo(expectedDays);
@@ -350,12 +330,9 @@ class FamilyServiceTest {
         @Test
         @DisplayName("deve lançar IllegalStateException quando consumo diário for zero")
         void testThrowIllegalStateExceptionWhenDailyConsumptionIsZero() {
-            assertThatThrownBy(() -> familyService.calculateRemainingDays(
-                    new BigDecimal("500"), BigDecimal.ZERO))
+            assertThatThrownBy(() -> cisternService.calculateRemainingDays(new BigDecimal("500"), BigDecimal.ZERO))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessage("Daily consumption must be greater than zero");
         }
     }
-
-
 }

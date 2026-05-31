@@ -9,7 +9,6 @@ import br.com.project.hydroflow.repository.FamilyRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import org.slf4j.Logger;
@@ -25,10 +24,15 @@ public class FamilyService {
 
     private final FamilyRepository familyRepository;
     private final SystemSettingsService systemSettingsService;
+    private final CisternService cisternService;
 
-    public FamilyService(FamilyRepository familyRepository, SystemSettingsService systemSettingsService) {
+    public FamilyService(
+            FamilyRepository familyRepository,
+            SystemSettingsService systemSettingsService,
+            CisternService cisternService) {
         this.familyRepository = familyRepository;
         this.systemSettingsService = systemSettingsService;
+        this.cisternService = cisternService;
     }
 
     public void save(Family family) {
@@ -102,7 +106,7 @@ public class FamilyService {
                 .map(Cistern::getCurrentLevelLiters)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        int remainingDays = calculateRemainingDays(totalWater, dailyConsumption);
+        int remainingDays = cisternService.calculateRemainingDays(totalWater, dailyConsumption);
 
         LocalDate nextDeliveryDate = LocalDate.now().plusDays(remainingDays);
 
@@ -147,40 +151,10 @@ public class FamilyService {
         families.forEach(family -> {
             BigDecimal dailyConsumption = settings.getDailyWaterConsumption()
                     .multiply(BigDecimal.valueOf(family.getMembers().size()));
-
-            BigDecimal remainingConsumption = dailyConsumption;
-
-            for (Cistern cistern : family.getCisterns()) {
-                if (remainingConsumption.compareTo(BigDecimal.ZERO) <= 0) break;
-
-                BigDecimal toConsume = remainingConsumption.min(cistern.getCurrentLevelLiters());
-                BigDecimal newLevel = cistern.getCurrentLevelLiters().subtract(toConsume);
-
-                remainingConsumption = remainingConsumption.subtract(toConsume);
-
-                int remainingDays = calculateRemainingDays(cistern.getCurrentLevelLiters(), dailyConsumption);
-
-                log.info(
-                        "Família id: {} | Cisterna id: {} | Consumido: {}L | Novo nível: {}L | Restante consumo: {}L",
-                        family.getId(),
-                        cistern.getId(),
-                        toConsume,
-                        newLevel,
-                        remainingConsumption);
-
-                cistern.updateLevel(newLevel, remainingDays);
-            }
+            cisternService.consumeDailyWater(family, dailyConsumption);
         });
 
         familyRepository.saveAll(families);
         log.info("Nível das cisternas atualizado para {} famílias", families.size());
-    }
-
-    public int calculateRemainingDays(BigDecimal waterAmount, BigDecimal dailyConsumption) {
-        if (dailyConsumption.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalStateException("Daily consumption must be greater than zero");
-        }
-
-        return waterAmount.divide(dailyConsumption, 0, RoundingMode.FLOOR).intValue();
     }
 }

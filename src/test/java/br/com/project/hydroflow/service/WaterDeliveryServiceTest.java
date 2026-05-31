@@ -38,6 +38,9 @@ class WaterDeliveryServiceTest {
     private FamilyService familyService;
 
     @Mock
+    private CisternService cisternService;
+
+    @Mock
     private SystemSettingsService systemSettingsService;
 
     @InjectMocks
@@ -59,7 +62,7 @@ class WaterDeliveryServiceTest {
             family.addCistern(cistern);
 
             when(familyService.getFamilyById(1L)).thenReturn(family);
-            when(familyService.calculateRemainingDays(any(BigDecimal.class), any(BigDecimal.class)))
+            when(cisternService.calculateRemainingDays(any(BigDecimal.class), any(BigDecimal.class)))
                     .thenReturn(30);
 
             stubSaveWaterDeliveryReturnsWithId(100L);
@@ -83,7 +86,7 @@ class WaterDeliveryServiceTest {
             assertThat(saved.getDeliveredAmountLiters()).isEqualByComparingTo("500");
             assertThat(saved.getFamily()).isSameAs(family);
 
-            verify(familyService).calculateRemainingDays(any(BigDecimal.class), eq(new BigDecimal("10")));
+            verify(cisternService).calculateRemainingDays(any(BigDecimal.class), eq(new BigDecimal("10")));
         }
 
         @Test
@@ -96,7 +99,7 @@ class WaterDeliveryServiceTest {
             family.addCistern(new Cistern(new BigDecimal("200"), BigDecimal.ZERO, family));
 
             when(familyService.getFamilyById(2L)).thenReturn(family);
-            when(familyService.calculateRemainingDays(any(BigDecimal.class), any(BigDecimal.class)))
+            when(cisternService.calculateRemainingDays(any(BigDecimal.class), any(BigDecimal.class)))
                     .thenReturn(10);
 
             stubSaveWaterDeliveryReturnsWithId(200L);
@@ -112,7 +115,7 @@ class WaterDeliveryServiceTest {
             ArgumentCaptor<WaterDelivery> deliveryCaptor = ArgumentCaptor.forClass(WaterDelivery.class);
             verify(waterDeliveryRepository).save(deliveryCaptor.capture());
             assertThat(deliveryCaptor.getValue().getDeliveredAmountLiters()).isEqualByComparingTo("50");
-            verify(familyService, times(2)).calculateRemainingDays(any(BigDecimal.class), eq(new BigDecimal("5")));
+            verify(cisternService, times(2)).calculateRemainingDays(any(BigDecimal.class), eq(new BigDecimal("5")));
         }
 
         @Test
@@ -124,7 +127,7 @@ class WaterDeliveryServiceTest {
             family.addCistern(new Cistern(new BigDecimal("100"), BigDecimal.ZERO, family));
 
             when(familyService.getFamilyById(3L)).thenReturn(family);
-            when(familyService.calculateRemainingDays(any(BigDecimal.class), any(BigDecimal.class)))
+            when(cisternService.calculateRemainingDays(any(BigDecimal.class), any(BigDecimal.class)))
                     .thenReturn(5);
 
             stubSaveWaterDeliveryReturnsWithId(300L);
@@ -148,7 +151,7 @@ class WaterDeliveryServiceTest {
             family.addCistern(new Cistern(new BigDecimal("500"), new BigDecimal("100"), family));
 
             when(familyService.getFamilyById(4L)).thenReturn(family);
-            when(familyService.calculateRemainingDays(any(BigDecimal.class), any(BigDecimal.class)))
+            when(cisternService.calculateRemainingDays(any(BigDecimal.class), any(BigDecimal.class)))
                     .thenReturn(20);
 
             stubSaveWaterDeliveryReturnsWithId(400L);
@@ -158,7 +161,7 @@ class WaterDeliveryServiceTest {
 
             waterDeliveryService.saveWaterDelivery(input);
 
-            verify(familyService).calculateRemainingDays(any(BigDecimal.class), eq(new BigDecimal("14")));
+            verify(cisternService).calculateRemainingDays(any(BigDecimal.class), eq(new BigDecimal("14")));
         }
     }
 

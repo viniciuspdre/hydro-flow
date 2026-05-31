@@ -125,4 +125,79 @@ public class Family {
             this.familyStatus = FamilyStatus.NORMAL;
         }
     }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Long id;
+        private String name;
+        private boolean hasGutterSystem;
+        private BigDecimal latitude;
+        private BigDecimal longitude;
+        private FamilyStatus familyStatus = FamilyStatus.NORMAL;
+        private List<Member> members = new ArrayList<>();
+        private List<WaterDelivery> waterDeliveries = new ArrayList<>();
+        private List<Cistern> cisterns = new ArrayList<>();
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder hasGutterSystem(boolean hasGutterSystem) {
+            this.hasGutterSystem = hasGutterSystem;
+            return this;
+        }
+
+        public Builder latitude(BigDecimal latitude) {
+            this.latitude = latitude;
+            return this;
+        }
+
+        public Builder longitude(BigDecimal longitude) {
+            this.longitude = longitude;
+            return this;
+        }
+
+        public Builder familyStatus(FamilyStatus familyStatus) {
+            this.familyStatus = familyStatus;
+            return this;
+        }
+
+        public Builder members(List<Member> members) {
+            this.members = members;
+            return this;
+        }
+
+        public Builder waterDeliveries(List<WaterDelivery> waterDeliveries) {
+            this.waterDeliveries = waterDeliveries;
+            return this;
+        }
+
+        public Builder cisterns(List<Cistern> cisterns) {
+            this.cisterns = cisterns;
+            return this;
+        }
+
+        public Family build() {
+            Family family = new Family();
+            family.id = this.id;
+            family.name = this.name;
+            family.hasGutterSystem = this.hasGutterSystem;
+            family.latitude = this.latitude;
+            family.longitude = this.longitude;
+            family.familyStatus = this.familyStatus;
+            family.members = this.members;
+            family.waterDeliveries = this.waterDeliveries;
+            family.cisterns = this.cisterns;
+            return family;
+        }
+    }
 }

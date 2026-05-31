@@ -1,6 +1,5 @@
 package br.com.project.hydroflow.service;
 
-import br.com.project.hydroflow.domain.Cistern;
 import br.com.project.hydroflow.domain.Family;
 import br.com.project.hydroflow.domain.SystemSettings;
 import br.com.project.hydroflow.domain.WaterDelivery;
@@ -19,14 +18,17 @@ public class WaterDeliveryService {
 
     private final WaterDeliveryRepository waterDeliveryRepository;
     private final FamilyService familyService;
+    private final CisternService cisternService;
     private final SystemSettingsService systemSettingsService;
 
     public WaterDeliveryService(
             WaterDeliveryRepository waterDeliveryRepository,
             FamilyService familyService,
+            CisternService cisternService,
             SystemSettingsService systemSettingsService) {
         this.waterDeliveryRepository = waterDeliveryRepository;
         this.familyService = familyService;
+        this.cisternService = cisternService;
         this.systemSettingsService = systemSettingsService;
     }
 
@@ -40,22 +42,8 @@ public class WaterDeliveryService {
         BigDecimal dailyConsumption = settings.getDailyWaterConsumption()
                 .multiply(BigDecimal.valueOf(family.getMembers().size()));
 
-        BigDecimal remainingWater = waterDeliveryDTO.deliveredAmountLiters();
-
-        for (Cistern cistern : family.getCisterns()) {
-            if (remainingWater.compareTo(BigDecimal.ZERO) <= 0) break;
-
-            BigDecimal availableSpace = cistern.getCapacityLiters().subtract(cistern.getCurrentLevelLiters());
-            BigDecimal toFill = remainingWater.min(availableSpace);
-
-            BigDecimal newLevel = cistern.getCurrentLevelLiters().add(toFill);
-            cistern.updateLevel(
-                    newLevel, familyService.calculateRemainingDays(cistern.getCurrentLevelLiters(), dailyConsumption));
-
-            log.info("Cisterna id: {} | Adicionado: {}L | Novo nível: {}L", cistern.getId(), toFill, newLevel);
-
-            remainingWater = remainingWater.subtract(toFill);
-        }
+        BigDecimal remainingWater =
+                cisternService.distributeWater(family, waterDeliveryDTO.deliveredAmountLiters(), dailyConsumption);
 
         log.info("Água restante após distribuição: {}L", remainingWater);
 
