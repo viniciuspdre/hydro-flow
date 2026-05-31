@@ -13,13 +13,16 @@ import br.com.project.hydroflow.domain.SystemSettings;
 import br.com.project.hydroflow.dto.CisternDTO;
 import br.com.project.hydroflow.dto.FamilyDTO;
 import br.com.project.hydroflow.dto.MemberDTO;
+import br.com.project.hydroflow.repository.CisternRepository;
 import br.com.project.hydroflow.repository.FamilyRepository;
 import jakarta.persistence.EntityNotFoundException;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -42,9 +45,11 @@ class FamilyServiceTest {
     private FamilyRepository familyRepository;
 
     @Mock
-    private SystemSettingsService systemSettingsService;
+    private CisternRepository cisternRepository;
 
     @Mock
+    private SystemSettingsService systemSettingsService;
+
     private CisternService cisternService;
 
     private FamilyService familyService;
@@ -56,6 +61,7 @@ class FamilyServiceTest {
 
     @BeforeEach
     void setUp() {
+        cisternService = new CisternService(cisternRepository);
         familyService = new FamilyService(familyRepository, systemSettingsService, cisternService);
         pageable = PageRequest.of(0, 5);
 
@@ -306,9 +312,16 @@ class FamilyServiceTest {
             when(systemSettingsService.getSystemSettings()).thenReturn(systemSettings);
             when(familyRepository.findAll()).thenReturn(List.of(defaultFamily));
 
+            BigDecimal nivelInicial =
+                    defaultFamily.getCisterns().getFirst().getCurrentLevelLiters();
+
             familyService.updateAllCisternLevels();
 
-            verify(cisternService).consumeDailyWater(defaultFamily, new BigDecimal("28"));
+            BigDecimal consumoEsperado = new BigDecimal("28");
+
+            assertThat(defaultFamily.getCisterns().getFirst().getCurrentLevelLiters())
+                    .isEqualByComparingTo(nivelInicial.subtract(consumoEsperado));
+
             verify(familyRepository).saveAll(List.of(defaultFamily));
         }
     }
