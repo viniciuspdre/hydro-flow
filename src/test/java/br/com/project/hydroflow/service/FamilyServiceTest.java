@@ -16,13 +16,11 @@ import br.com.project.hydroflow.dto.MemberDTO;
 import br.com.project.hydroflow.repository.CisternRepository;
 import br.com.project.hydroflow.repository.FamilyRepository;
 import jakarta.persistence.EntityNotFoundException;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -312,8 +310,7 @@ class FamilyServiceTest {
             when(systemSettingsService.getSystemSettings()).thenReturn(systemSettings);
             when(familyRepository.findAll()).thenReturn(List.of(defaultFamily));
 
-            BigDecimal nivelInicial =
-                    defaultFamily.getCisterns().getFirst().getCurrentLevelLiters();
+            BigDecimal nivelInicial = defaultFamily.getCisterns().getFirst().getCurrentLevelLiters();
 
             familyService.updateAllCisternLevels();
 

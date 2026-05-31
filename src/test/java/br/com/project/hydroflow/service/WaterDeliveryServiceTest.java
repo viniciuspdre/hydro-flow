@@ -2,8 +2,6 @@ package br.com.project.hydroflow.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -18,6 +16,7 @@ import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -46,24 +45,30 @@ class WaterDeliveryServiceTest {
     @InjectMocks
     private WaterDeliveryService waterDeliveryService;
 
+    private SystemSettings systemSettings;
+    private Family defaultFamily;
+
+    @BeforeEach
+    void setUp() {
+        systemSettings = new SystemSettings();
+        systemSettings.setDailyWaterConsumption(new BigDecimal("10"));
+
+        defaultFamily = familyWithId(1L, "Silva", true);
+        defaultFamily.addMember(new Member("Ana", 30, false));
+        defaultFamily.addCistern(new Cistern(new BigDecimal("1000"), BigDecimal.ZERO, defaultFamily));
+    }
+
     @Nested
     @DisplayName("saveWaterDelivery")
     class SaveWaterDelivery {
 
         @Test
-        @DisplayName("deve distribuir água na cisterna e persistir entrega com volume efetivo")
-        void deveDistribuirAguaNaPrimeiraCisternaEPersistirEntrega() {
-            SystemSettings settings = settingsWithDaily(new BigDecimal("10"));
-            when(systemSettingsService.getSystemSettings()).thenReturn(settings);
-
-            Family family = familyWithId(1L, "Silva", true);
-            family.addMember(new Member("Ana", 30, false));
-            Cistern cistern = new Cistern(new BigDecimal("1000"), BigDecimal.ZERO, family);
-            family.addCistern(cistern);
-
-            when(familyService.getFamilyById(1L)).thenReturn(family);
-            when(cisternService.calculateRemainingDays(any(BigDecimal.class), any(BigDecimal.class)))
-                    .thenReturn(30);
+        @DisplayName("deve distribuir água, persistir família e entrega com volume efetivo")
+        void deveDistribuirAguaPersistirFamiliaEEntregaComVolumeEfetivo() {
+            when(systemSettingsService.getSystemSettings()).thenReturn(systemSettings);
+            when(familyService.getFamilyById(1L)).thenReturn(defaultFamily);
+            when(cisternService.distributeWater(defaultFamily, new BigDecimal("500"), new BigDecimal("10")))
+                    .thenReturn(BigDecimal.ZERO);
 
             stubSaveWaterDeliveryReturnsWithId(100L);
 
@@ -75,60 +80,54 @@ class WaterDeliveryServiceTest {
             assertThat(result.id()).isEqualTo(100L);
             assertThat(result.familyId()).isEqualTo(1L);
             assertThat(result.deliveredAmountLiters()).isEqualByComparingTo("500");
-            assertThat(cistern.getCurrentLevelLiters()).isEqualByComparingTo("500");
 
-            verify(familyService).save(family);
+            verify(cisternService).distributeWater(defaultFamily, new BigDecimal("500"), new BigDecimal("10"));
+            verify(familyService).save(defaultFamily);
+
             ArgumentCaptor<WaterDelivery> deliveryCaptor = ArgumentCaptor.forClass(WaterDelivery.class);
             verify(waterDeliveryRepository).save(deliveryCaptor.capture());
             WaterDelivery saved = deliveryCaptor.getValue();
             assertThat(saved.getDeliveryDate()).isEqualTo(input.deliveryDate());
             assertThat(saved.getRequestedAmountLiters()).isEqualByComparingTo("1000");
             assertThat(saved.getDeliveredAmountLiters()).isEqualByComparingTo("500");
-            assertThat(saved.getFamily()).isSameAs(family);
-
-            verify(cisternService).calculateRemainingDays(any(BigDecimal.class), eq(new BigDecimal("10")));
+            assertThat(saved.getFamily()).isSameAs(defaultFamily);
         }
 
         @Test
-        @DisplayName("deve preencher várias cisternas até esgotar o volume entregue")
-        void devePreencherVariasCisternasAteEsgotarVolume() {
-            when(systemSettingsService.getSystemSettings()).thenReturn(settingsWithDaily(new BigDecimal("5")));
+        @DisplayName("deve subtrair volume restante retornado pela distribuição")
+        void deveSubtrairVolumeRestanteRetornadoPelaDistribuicao() {
+            when(systemSettingsService.getSystemSettings()).thenReturn(systemSettings);
+
             Family family = familyWithId(2L, "Souza", false);
             family.addMember(new Member("B", 20, false));
-            family.addCistern(new Cistern(new BigDecimal("100"), new BigDecimal("80"), family));
-            family.addCistern(new Cistern(new BigDecimal("200"), BigDecimal.ZERO, family));
-
             when(familyService.getFamilyById(2L)).thenReturn(family);
-            when(cisternService.calculateRemainingDays(any(BigDecimal.class), any(BigDecimal.class)))
-                    .thenReturn(10);
+            when(cisternService.distributeWater(family, new BigDecimal("200"), new BigDecimal("10")))
+                    .thenReturn(new BigDecimal("50"));
 
             stubSaveWaterDeliveryReturnsWithId(200L);
 
             WaterDeliveryDTO input = new WaterDeliveryDTO(
-                    null, LocalDate.of(2024, 7, 10), new BigDecimal("200"), new BigDecimal("50"), 2L);
+                    null, LocalDate.of(2024, 7, 10), new BigDecimal("200"), new BigDecimal("200"), 2L);
 
-            waterDeliveryService.saveWaterDelivery(input);
+            WaterDeliveryDTO result = waterDeliveryService.saveWaterDelivery(input);
 
-            assertThat(family.getCisterns().get(0).getCurrentLevelLiters()).isEqualByComparingTo("100");
-            assertThat(family.getCisterns().get(1).getCurrentLevelLiters()).isEqualByComparingTo("30");
+            assertThat(result.deliveredAmountLiters()).isEqualByComparingTo("150");
 
             ArgumentCaptor<WaterDelivery> deliveryCaptor = ArgumentCaptor.forClass(WaterDelivery.class);
             verify(waterDeliveryRepository).save(deliveryCaptor.capture());
-            assertThat(deliveryCaptor.getValue().getDeliveredAmountLiters()).isEqualByComparingTo("50");
-            verify(cisternService, times(2)).calculateRemainingDays(any(BigDecimal.class), eq(new BigDecimal("5")));
+            assertThat(deliveryCaptor.getValue().getDeliveredAmountLiters()).isEqualByComparingTo("150");
         }
 
         @Test
-        @DisplayName("deve limitar volume efetivo à capacidade disponível das cisternas")
-        void deveLimitarVolumeEfetivoACapacidadeDisponivel() {
-            when(systemSettingsService.getSystemSettings()).thenReturn(settingsWithDaily(new BigDecimal("10")));
+        @DisplayName("deve limitar volume efetivo quando sobrar água após distribuição")
+        void deveLimitarVolumeEfetivoQuandoSobrarAguaAposDistribuicao() {
+            when(systemSettingsService.getSystemSettings()).thenReturn(systemSettings);
+
             Family family = familyWithId(3L, "Lima", true);
             family.addMember(new Member("C", 40, false));
-            family.addCistern(new Cistern(new BigDecimal("100"), BigDecimal.ZERO, family));
-
             when(familyService.getFamilyById(3L)).thenReturn(family);
-            when(cisternService.calculateRemainingDays(any(BigDecimal.class), any(BigDecimal.class)))
-                    .thenReturn(5);
+            when(cisternService.distributeWater(family, new BigDecimal("150"), new BigDecimal("10")))
+                    .thenReturn(new BigDecimal("50"));
 
             stubSaveWaterDeliveryReturnsWithId(300L);
 
@@ -137,22 +136,22 @@ class WaterDeliveryServiceTest {
 
             WaterDeliveryDTO result = waterDeliveryService.saveWaterDelivery(input);
 
-            assertThat(family.getCisterns().getFirst().getCurrentLevelLiters()).isEqualByComparingTo("100");
             assertThat(result.deliveredAmountLiters()).isEqualByComparingTo("100");
+            verify(cisternService).distributeWater(family, new BigDecimal("150"), new BigDecimal("10"));
         }
 
         @Test
-        @DisplayName("deve considerar consumo diário multiplicado pelo número de membros ao calcular dias restantes")
+        @DisplayName("deve considerar consumo diário multiplicado pelo número de membros")
         void deveConsiderarConsumoProporcionalAoNumeroDeMembros() {
-            when(systemSettingsService.getSystemSettings()).thenReturn(settingsWithDaily(new BigDecimal("7")));
+            systemSettings.setDailyWaterConsumption(new BigDecimal("7"));
+            when(systemSettingsService.getSystemSettings()).thenReturn(systemSettings);
+
             Family family = familyWithId(4L, "Costa", true);
             family.addMember(new Member("D1", 10, false));
             family.addMember(new Member("D2", 12, false));
-            family.addCistern(new Cistern(new BigDecimal("500"), new BigDecimal("100"), family));
-
             when(familyService.getFamilyById(4L)).thenReturn(family);
-            when(cisternService.calculateRemainingDays(any(BigDecimal.class), any(BigDecimal.class)))
-                    .thenReturn(20);
+            when(cisternService.distributeWater(family, new BigDecimal("50"), new BigDecimal("14")))
+                    .thenReturn(BigDecimal.ZERO);
 
             stubSaveWaterDeliveryReturnsWithId(400L);
 
@@ -161,7 +160,7 @@ class WaterDeliveryServiceTest {
 
             waterDeliveryService.saveWaterDelivery(input);
 
-            verify(cisternService).calculateRemainingDays(any(BigDecimal.class), eq(new BigDecimal("14")));
+            verify(cisternService).distributeWater(family, new BigDecimal("50"), new BigDecimal("14"));
         }
     }
 
@@ -206,12 +205,6 @@ class WaterDeliveryServiceTest {
             setField(wd, "id", id);
             return wd;
         });
-    }
-
-    private static SystemSettings settingsWithDaily(BigDecimal daily) {
-        SystemSettings settings = new SystemSettings();
-        settings.setDailyWaterConsumption(daily);
-        return settings;
     }
 
     private static Family familyWithId(Long id, String name, boolean gutter) {
