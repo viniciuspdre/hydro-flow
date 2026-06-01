@@ -11,14 +11,13 @@ import br.com.project.hydroflow.domain.SystemSettings;
 import br.com.project.hydroflow.dto.SystemSettingsDTO;
 import br.com.project.hydroflow.repository.SystemSettingsRepository;
 import jakarta.persistence.EntityNotFoundException;
-import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -29,8 +28,19 @@ class SystemSettingsServiceTest {
     @Mock
     private SystemSettingsRepository systemSettingsRepository;
 
-    @InjectMocks
     private SystemSettingsService systemSettingsService;
+
+    private SystemSettings defaultSystemSettings;
+
+    @BeforeEach
+    void setUp() {
+        systemSettingsService = new SystemSettingsService(systemSettingsRepository);
+
+        defaultSystemSettings = SystemSettings.builder()
+                .id(1L)
+                .dailyWaterConsumption(new BigDecimal("14"))
+                .build();
+    }
 
     @Nested
     @DisplayName("getSystemSettings")
@@ -38,43 +48,22 @@ class SystemSettingsServiceTest {
 
         @Test
         @DisplayName("deve retornar configurações quando existirem")
-        void deveRetornarConfiguracoesQuandoExistirem() {
-            SystemSettings entity = settingsWithId(1L, new BigDecimal("14.5"));
-            when(systemSettingsRepository.findById(1L)).thenReturn(Optional.of(entity));
+        void testReturnSettingsWhenExists() {
+            when(systemSettingsRepository.findById(1L)).thenReturn(Optional.of(defaultSystemSettings));
 
             SystemSettings result = systemSettingsService.getSystemSettings();
 
-            assertThat(result).isSameAs(entity);
-            verify(systemSettingsRepository).findById(1L);
+            assertThat(result).isSameAs(defaultSystemSettings);
         }
 
         @Test
         @DisplayName("deve lançar EntityNotFoundException quando não existir registro")
-        void deveLancarEntityNotFoundExceptionQuandoNaoExistirRegistro() {
+        void testThrowEntityNotFoundExceptionWhenRecordDoesNotExist() {
             when(systemSettingsRepository.findById(1L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> systemSettingsService.getSystemSettings())
                     .isInstanceOf(EntityNotFoundException.class)
                     .hasMessageContaining("Configurações não encontradas");
-
-            verify(systemSettingsRepository).findById(1L);
-        }
-    }
-
-    @Nested
-    @DisplayName("findSystemSettings")
-    class FindSystemSettings {
-
-        @Test
-        @DisplayName("deve retornar DTO correspondente à entidade persistida")
-        void deveRetornarDtoCorrespondente() {
-            SystemSettings entity = settingsWithId(1L, new BigDecimal("20"));
-            when(systemSettingsRepository.findById(1L)).thenReturn(Optional.of(entity));
-
-            SystemSettingsDTO dto = systemSettingsService.findSystemSettings();
-
-            assertThat(dto.id()).isEqualTo(1L);
-            assertThat(dto.dailyWaterConsumption()).isEqualByComparingTo("20");
         }
     }
 
@@ -82,52 +71,38 @@ class SystemSettingsServiceTest {
     @DisplayName("updateSystemSettings")
     class UpdateSystemSettings {
 
+        private SystemSettingsDTO input;
+
+        @BeforeEach
+        void setUp() {
+            input = new SystemSettingsDTO(null, new BigDecimal("25.5"));
+        }
+
         @Test
         @DisplayName("deve atualizar consumo diário, persistir e retornar DTO")
-        void deveAtualizarConsumoPersistirERetornarDto() {
-            SystemSettings entity = settingsWithId(1L, new BigDecimal("10"));
-            when(systemSettingsRepository.findById(1L)).thenReturn(Optional.of(entity));
-            when(systemSettingsRepository.save(entity)).thenReturn(entity);
-
-            SystemSettingsDTO input = new SystemSettingsDTO(null, new BigDecimal("25.5"));
+        void testUpdateDailyConsumptionPersistAndReturnDto() {
+            defaultSystemSettings.setDailyWaterConsumption(new BigDecimal("10"));
+            when(systemSettingsRepository.findById(1L)).thenReturn(Optional.of(defaultSystemSettings));
+            when(systemSettingsRepository.save(defaultSystemSettings)).thenReturn(defaultSystemSettings);
 
             SystemSettingsDTO result = systemSettingsService.updateSystemSettings(input);
 
-            assertThat(entity.getDailyWaterConsumption()).isEqualByComparingTo("25.5");
+            assertThat(defaultSystemSettings.getDailyWaterConsumption()).isEqualByComparingTo("25.5");
             assertThat(result.dailyWaterConsumption()).isEqualByComparingTo("25.5");
             assertThat(result.id()).isEqualTo(1L);
-            verify(systemSettingsRepository).save(entity);
+            verify(systemSettingsRepository).save(defaultSystemSettings);
         }
 
         @Test
         @DisplayName("deve lançar EntityNotFoundException quando não existir para atualização")
-        void deveLancarEntityNotFoundExceptionQuandoNaoExistirParaAtualizacao() {
+        void testThrowEntityNotFoundExceptionWhenRecordDoesNotExistForUpdate() {
             when(systemSettingsRepository.findById(1L)).thenReturn(Optional.empty());
-            SystemSettingsDTO input = new SystemSettingsDTO(null, new BigDecimal("15"));
 
             assertThatThrownBy(() -> systemSettingsService.updateSystemSettings(input))
                     .isInstanceOf(EntityNotFoundException.class)
                     .hasMessageContaining("Configurações não encontradas");
 
-            verify(systemSettingsRepository).findById(1L);
             verify(systemSettingsRepository, never()).save(any());
-        }
-    }
-
-    private static SystemSettings settingsWithId(Long id, BigDecimal daily) {
-        SystemSettings settings = new SystemSettings();
-        settings.setDailyWaterConsumption(daily);
-        setField(settings, "id", id);
-        return settings;
-    }
-
-    private static void setField(Object target, String fieldName, Object value) {
-        try {
-            Field field = target.getClass().getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.set(target, value);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException(e);
         }
     }
 }

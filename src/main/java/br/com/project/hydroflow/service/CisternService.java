@@ -20,7 +20,7 @@ public class CisternService {
         this.cisternRepository = cisternRepository;
     }
 
-    public BigDecimal distributeWater(Family family, BigDecimal waterAmount, BigDecimal dailyConsumption) {
+    public BigDecimal fillCisterns(Family family, BigDecimal waterAmount, BigDecimal dailyConsumption) {
         BigDecimal remainingWater = waterAmount;
 
         for (Cistern cistern : family.getCisterns()) {

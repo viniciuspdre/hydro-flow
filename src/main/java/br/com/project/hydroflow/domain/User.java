@@ -99,4 +99,58 @@ public class User implements UserDetails {
     public void setRole(Role role) {
         this.role = role;
     }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Long id;
+        private String name;
+        private String email;
+        private String password;
+        private Role role;
+        private boolean firstAccess = true;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder email(String email) {
+            this.email = email;
+            return this;
+        }
+
+        public Builder password(String password) {
+            this.password = password;
+            return this;
+        }
+
+        public Builder role(Role role) {
+            this.role = role;
+            return this;
+        }
+
+        public Builder firstAccess(boolean firstAccess) {
+            this.firstAccess = firstAccess;
+            return this;
+        }
+
+        public User build() {
+            User user = new User();
+            user.id = this.id;
+            user.name = this.name;
+            user.email = this.email;
+            user.password = this.password;
+            user.role = this.role;
+            user.firstAccess = this.firstAccess;
+            return user;
+        }
+    }
 }

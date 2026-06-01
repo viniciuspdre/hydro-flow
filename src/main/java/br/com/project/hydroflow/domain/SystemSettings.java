@@ -26,4 +26,30 @@ public class SystemSettings {
     public void setDailyWaterConsumption(BigDecimal dailyWaterConsumption) {
         this.dailyWaterConsumption = dailyWaterConsumption;
     }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Long id;
+        private BigDecimal dailyWaterConsumption;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder dailyWaterConsumption(BigDecimal dailyWaterConsumption) {
+            this.dailyWaterConsumption = dailyWaterConsumption;
+            return this;
+        }
+
+        public SystemSettings build() {
+            SystemSettings systemSettings = new SystemSettings();
+            systemSettings.id = this.id;
+            systemSettings.dailyWaterConsumption = this.dailyWaterConsumption;
+            return systemSettings;
+        }
+    }
 }

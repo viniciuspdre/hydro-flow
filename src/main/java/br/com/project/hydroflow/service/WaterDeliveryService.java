@@ -43,7 +43,7 @@ public class WaterDeliveryService {
                 .multiply(BigDecimal.valueOf(family.getMembers().size()));
 
         BigDecimal remainingWater =
-                cisternService.distributeWater(family, waterDeliveryDTO.deliveredAmountLiters(), dailyConsumption);
+                cisternService.fillCisterns(family, waterDeliveryDTO.deliveredAmountLiters(), dailyConsumption);
 
         log.info("Água restante após distribuição: {}L", remainingWater);
 

@@ -94,8 +94,9 @@ class FamilyServiceTest {
         urgentFamily.addMember(new Member("D", 40, true));
         urgentFamily.addCistern(new Cistern(new BigDecimal("500"), new BigDecimal("20"), urgentFamily));
 
-        systemSettings = new SystemSettings();
-        systemSettings.setDailyWaterConsumption(new BigDecimal("14"));
+        systemSettings = SystemSettings.builder()
+                .dailyWaterConsumption(new BigDecimal("14"))
+                .build();
     }
 
     @Nested

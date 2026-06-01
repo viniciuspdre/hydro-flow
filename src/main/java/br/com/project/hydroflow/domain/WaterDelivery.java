@@ -55,4 +55,51 @@ public class WaterDelivery {
     public Family getFamily() {
         return family;
     }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Long id;
+        private LocalDate deliveryDate;
+        private BigDecimal requestedAmountLiters;
+        private BigDecimal deliveredAmountLiters;
+        private Family family;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder deliveryDate(LocalDate deliveryDate) {
+            this.deliveryDate = deliveryDate;
+            return this;
+        }
+
+        public Builder requestedAmountLiters(BigDecimal requestedAmountLiters) {
+            this.requestedAmountLiters = requestedAmountLiters;
+            return this;
+        }
+
+        public Builder deliveredAmountLiters(BigDecimal deliveredAmountLiters) {
+            this.deliveredAmountLiters = deliveredAmountLiters;
+            return this;
+        }
+
+        public Builder family(Family family) {
+            this.family = family;
+            return this;
+        }
+
+        public WaterDelivery build() {
+            WaterDelivery waterDelivery = new WaterDelivery();
+            waterDelivery.id = this.id;
+            waterDelivery.deliveryDate = this.deliveryDate;
+            waterDelivery.requestedAmountLiters = this.requestedAmountLiters;
+            waterDelivery.deliveredAmountLiters = this.deliveredAmountLiters;
+            waterDelivery.family = this.family;
+            return waterDelivery;
+        }
+    }
 }
