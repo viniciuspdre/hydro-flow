@@ -8,6 +8,8 @@ plugins {
     id("com.diffplug.spotless") version "6.25.0"
 
     id("com.adarshr.test-logger") version "4.0.0"
+
+    id("com.google.cloud.tools.jib") version "3.5.1"
 }
 
 group = "br.com.project"
@@ -44,6 +46,20 @@ tasks.register("formatJava") {
     group = "formatting"
     description = "Formata todos os arquivos Java Palantir Formatter"
     dependsOn("spotlessApply")
+}
+
+jib {
+    from {
+        image = "eclipse-temurin:25-jdk"
+    }
+
+    container {
+        environment = mapOf(
+            "HOME" to "/tmp"
+        )
+
+        ports = listOf("8080")
+    }
 }
 
 dependencies {

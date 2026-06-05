@@ -10,9 +10,10 @@ spring:
     formatted-version: " (v${spring.application.version})"
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/hf_management
-    username: admin
-    password: admin
+    driver-class-name: ${HYDRO_FLOW_DB_DRIVER:org.postgresql.Driver}
+    url: ${HYDRO_FLOW_DB_URL:jdbc:postgresql://localhost:5433/hf_management}
+    username: ${HYDRO_FLOW_DB_USER:admin}
+    password: ${HYDRO_FLOW_DB_PWD:J65hH#0hEK}
     hikari:
       pool-name: HydroFlowPool
       maximum-pool-size: 10
@@ -28,7 +29,16 @@ spring:
       #ADMIN_PASSWORD: ${ADMIN_PASSWORD:admin}
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:$2a$10$u0Kk6GdB0zT6vn.He1j9OOjmjpkZ5k.w5sIuts/GYEyWnQIwidlGC}
 
-#logging:
-#  level:
+logging:
+  level:
+    root: INFO
+    br.com.project.hydroflow: DEBUG
 #    liquibase: DEBUG
 #    org.springframework.boot.autoconfigure.liquibase: DEBUG
+  file:
+    name: /app/logs/hydro-flow.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+      file-name-pattern: /app/logs/hydro-flow-%d{yyyy-MM-dd}.%i.log

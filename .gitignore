@@ -39,3 +39,4 @@ out/
 
 ### DB Data ###
 /infra/data/
+/infra/logs/

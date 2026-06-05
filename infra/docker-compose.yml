@@ -1,17 +1,39 @@
 services:
   postgres:
+    container_name: hydro-flow-postgres
     image: postgres:15
     ports:
       - "5433:5432"
-    environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=admin
-      - POSTGRES_DB=hf_management
-
+    env_file:
+      - env/postgres.env
     volumes:
       # Volume para garantir que os dados não sejam perdidos após o desligamento do container
       - ./data/postgres:/var/lib/postgresql/data
 
-volumes:
-  postgres_data:
+    networks:
+      - hydro-flow-dev-net
+
+  hidro-flow:
+    depends_on:
+      - postgres
+    container_name: hydro-flow-dev
+    image: 'hydro-flow:0.0.1-SNAPSHOT'
+    ports:
+      - '8080:8080'
+      - '5007:5007'
+    environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5007
+    env_file:
+      - env/hydro-flow.env
+    volumes:
+      - ./data/hydro-flow:/opt/hydro-flow/data
+      - ./logs/hydro-flow:/app/logs
+
+    networks:
+      - hydro-flow-dev-net
+
+
+networks:
+  hydro-flow-dev-net:
+    driver: bridge
 
