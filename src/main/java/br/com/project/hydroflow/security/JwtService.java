@@ -27,7 +27,7 @@ public class JwtService {
     private Long expiration;
 
     public String generateToken(User user) {
-        log.info("Gerando token para usuário: {}", user.getEmail());
+        log.info("Gerando token para usuário: {}", user.getId());
 
         List<String> permissions = user.getRole().getPermissions().stream()
                 .map(Permission::getName)

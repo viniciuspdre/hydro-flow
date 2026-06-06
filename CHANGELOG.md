@@ -4,6 +4,25 @@ Texto pensado para **comunicação com stakeholders e equipes não desenvolvedor
 
 ---
 
+## [1.1.0] — 5 de junho de 2026
+
+### O que mudou para o usuário
+
+- **Painel administrativo de acesso:** gestores podem **consultar usuários**, **criar e editar cargos**, **associar permissões** e **excluir cargos** que não tenham pessoas vinculadas — tudo pela API, pronta para alimentar telas de administração.
+- **Troca de senha em fluxos separados:** quem já usa o sistema troca a senha em um endpoint dedicado (com validação da senha atual); quem está no **primeiro acesso** continua com fluxo próprio, sem exigir login completo antes da troca.
+- **Ambiente completo no Docker:** backend, banco de dados e **frontend web** sobem juntos com um único comando; o navegador acessa o painel em **http://localhost** e a API fica disponível por trás do mesmo endereço.
+- **Mensagens de erro mais previsíveis:** regras de negócio violadas (por exemplo, excluir cargo em uso) e recursos inexistentes passam a retornar códigos e textos padronizados, facilitando tratamento no frontend.
+- **Consumo mínimo de água:** o sistema **não aceita mais consumo diário zero** nas configurações — valor inválido é rejeitado na API e no banco, evitando previsões de “dias restantes” distorcidas.
+
+### Atenção (mudança que exige ação)
+
+- Telas ou integrações que **alteravam senha ou cargo** no mesmo formulário de edição de usuário devem usar os **endpoints específicos** (`/hf/auth/update-password` para senha; gestão de cargos em `/hf/user-management`).
+- O **token de login** passa a carregar **identificador do usuário e lista de permissões**; clientes que decodificam o JWT para autorização local devem alinhar-se ao novo formato.
+- **Configurações com consumo diário igual a zero** deixam de ser aceitas — revisar valores já cadastrados antes de atualizar.
+- O **administrador padrão** criado na instalação **não exige mais troca de senha no primeiro login**; ambientes que dependiam desse bloqueio inicial devem ajustar o fluxo de onboarding.
+
+---
+
 ## [1.0.0] — 19 de abril de 2026
 
 ### O que mudou para o usuário

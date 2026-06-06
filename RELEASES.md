@@ -6,6 +6,45 @@ Documento derivado do histórico de commits (`git log`). As versões abaixo são
 
 ---
 
+## Release 1.1.0 — Gestão de acesso, Docker completo e endurecimento da API
+
+**Período:** 3 de maio – 5 de junho de 2026  
+**Foco:** módulo administrativo de usuários/cargos/permissões, fluxos de senha refinados, stack containerizada (backend + frontend + nginx), qualidade e documentação técnica.
+
+| Commit   | Resumo |
+|----------|--------|
+| `a138808` | Eager fetch em `Role`/`User`, `@Transactional` em `UserDetailsServiceImpl`, flexibilização de `@Email` no login, admin seed com `first_access = false` |
+| `7346e82` | JaCoCo integrado ao Gradle; refatoração do setup de testes |
+| `90d05a1` | Consumo diário mínimo `>= 1` (DTO + CHECK constraint); `FamilyService.calculateRemainingDays` recebe `BigDecimal`; `IllegalStateException` em consumo inválido |
+| `bc0b449` | `UserManagementController` (CRUD de cargos, listagem de usuários/permissões), `PermissionService`, `label` em `Permission`, migração Liquibase |
+| `3a81542` | `DELETE /hf/user-management/roles/{id}` com bloqueio se houver usuários vinculados (422) |
+| `018ddc9` | `GlobalExceptionHandler`: `IllegalStateException` → 422, `EntityNotFoundException` → 404; `/change-password` sem `@AuthenticatedOnly` |
+| `43080aa` | `/hf/auth/update-password`, `UpdateUserDTO` (nome/e-mail), JWT com `userId` + `permissions`, `CustomAccessDeniedHandler`, ajustes em `SecurityConfig` |
+| `924617e` | Anotação `@AdminOrEditFamily` |
+| `6e928ee` / `d1cdffa` / `b1c6cf8` | Refatoração e expansão de testes (`FamilyService`, `UserService`, `WaterDeliveryService`; Instancio) |
+| `1671d43` | `CisternService` encapsula lógica de cisternas; builder em `Family` |
+| `355728c` | Builder pattern em entidades de domínio |
+| `955c6b7` / `57a13b4` | CI Gradle/JDK 25 + PostgreSQL; workflow frontend (pnpm, Node 20) |
+| `7e83d0d` / `a5978b0` | Documentação C4 em `docs/c4/` (contexto, containers, componentes, sequências) |
+| `37233b9` | Jib + `docker-compose.yml` (postgres + backend), env files, logs em arquivo, debug remoto `:5007` |
+| *(working tree)* | Serviço `hydro-flow-front` + `nginx.conf` (proxy `/hydro-flow/` → backend, SPA em `/`); CORS para `http://localhost` e `:80`; logs JWT por ID de usuário |
+
+**Destaques**
+
+- API administrativa para perfis e permissões, alinhada ao RBAC da 1.0.0.
+- Separação clara entre edição de perfil, troca de senha e gestão de cargos.
+- Ambiente local reproduzível com imagens Docker (Jib no backend).
+- Cobertura de testes com JaCoCo e pipeline CI unificado.
+
+### ⚠️ Breaking changes
+
+- **`PUT /hf/users/{id}`:** passa a aceitar apenas **nome e e-mail** via `UpdateUserDTO`; senha e cargo saíram deste fluxo.
+- **JWT:** claims **`userId`** e **`permissions`** adicionados ao payload gerado em `JwtService`.
+- **`SystemSettings.dailyWaterConsumption`:** mínimo **1** (antes aceitava 0); constraint no banco (`ck_4873926843600`).
+- **Admin seed:** `first_access = false` na migração inicial — primeiro login do admin não retorna mais 403 de troca obrigatória.
+
+---
+
 ## Release 0.1.0 — Fundação do domínio e infraestrutura
 
 **Período:** 13 de março de 2026  
@@ -161,6 +200,7 @@ Documento derivado do histórico de commits (`git log`). As versões abaixo são
 | **0.4.0** | 22 mar 2026 | JWT + multi-cisterna (**breaking**) |
 | **0.5.0** | 30 mar – 18 abr 2026 | CORS + simplificação (**breaking**) + testes |
 | **1.0.0** | 19 abr 2026 | Perfis, permissões, primeiro acesso (**breaking**) |
+| **1.1.0** | 3 mai – 5 jun 2026 | Admin de acesso, Docker stack, senha/endurecimento (**breaking**) |
 
 ---
 
