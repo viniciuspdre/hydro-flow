@@ -13,6 +13,9 @@ jobs:
     name: Build e Push da Imagem para o ACR
     runs-on: ubuntu-latest
 
+    env:
+      ACR_LOGIN_SERVER: ${{ vars.ACR_NAME }}.azurecr.io
+
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
@@ -44,5 +47,5 @@ jobs:
       - name: Build e Push da imagem com Jib
         run: |
           ./gradlew jib \
-            -Djib.to.image=${{ vars.ACR_LOGIN_SERVER }}/hydro-flow \
+            -Djib.to.image=${{ env.ACR_LOGIN_SERVER }}/hydro-flow \
             -Djib.to.tags="${{ github.sha }},latest"
