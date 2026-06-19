@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import br.com.project.hydroflow.domain.User;
+import br.com.project.hydroflow.dto.ChangePasswordDTO;
 import br.com.project.hydroflow.dto.LoginDTO;
 import br.com.project.hydroflow.repository.UserRepository;
 import br.com.project.hydroflow.security.JwtService;
@@ -76,6 +77,66 @@ class AuthControllerWebMvcTest {
                 .andExpect(jsonPath("$.message").value("Troque sua senha antes de continuar"));
 
         verify(jwtService, never()).generateToken(any());
+    }
+
+    @Test
+    @DisplayName("POST /hf/auth/login retorna 200 e TokenDTO quando sucesso")
+    void loginSucesso() throws Exception {
+        LoginDTO body = new LoginDTO("maria@example.com", "senha1234");
+
+        User user = new User("Maria", "maria@example.com", "encoded", null);
+        setField(user, "id", 42L);
+        user.setFirstAccess(false);
+
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(mock(Authentication.class));
+        when(userRepository.findByEmail("maria@example.com")).thenReturn(Optional.of(user));
+        when(jwtService.generateToken(any())).thenReturn("token123");
+
+        mockMvc.perform(post("/hf/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("token123"));
+    }
+
+    @Test
+    @DisplayName("PATCH /hf/auth/change-password retorna 200 e TokenDTO quando sucesso")
+    void changePasswordSucesso() throws Exception {
+        ChangePasswordDTO body = new ChangePasswordDTO(42L, "senha1234", "novaSenha");
+
+        User user = new User("Maria", "maria@example.com", "encoded", null);
+        setField(user, "id", 42L);
+
+        when(userRepository.findById(42L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode("novaSenha")).thenReturn("encodedNovaSenha");
+        when(jwtService.generateToken(any())).thenReturn("token123");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/hf/auth/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("token123"));
+    }
+
+    @Test
+    @DisplayName("PATCH /hf/auth/update-password retorna 200 e TokenDTO quando sucesso")
+    void updatePasswordSucesso() throws Exception {
+        ChangePasswordDTO body = new ChangePasswordDTO(42L, "senha1234", "novaSenha");
+
+        User user = new User("Maria", "maria@example.com", "encoded", null);
+        setField(user, "id", 42L);
+
+        when(userRepository.findById(42L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("senha1234", "encoded")).thenReturn(true);
+        when(passwordEncoder.encode("novaSenha")).thenReturn("encodedNovaSenha");
+        when(jwtService.generateToken(any())).thenReturn("token123");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/hf/auth/update-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("token123"));
     }
 
     private static void setField(Object target, String fieldName, Object value) {

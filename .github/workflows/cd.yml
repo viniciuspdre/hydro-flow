@@ -1,8 +1,11 @@
 name: Hydro Flow CD
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Hydro Flow CI"]
     branches: [ "master" ]
+    types:
+      - completed
 
 permissions:
   id-token: write
@@ -12,6 +15,7 @@ jobs:
   build-and-push:
     name: Build e Push da Imagem para o ACR
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     env:
       ACR_LOGIN_SERVER: ${{ vars.ACR_NAME }}.azurecr.io
