@@ -15,6 +15,7 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,7 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("RoleService Tests")
+@DisplayName("Testes para RoleService")
 class RoleServiceTest {
 
     @Mock
@@ -38,112 +39,132 @@ class RoleServiceTest {
     @InjectMocks
     private RoleService roleService;
 
-    @Test
-    @DisplayName("findAllRoles deve retornar lista de RoleDTO")
-    void findAllRoles() {
-        Role role = new Role("ADMIN");
-        when(roleRepository.findAll()).thenReturn(List.of(role));
+    @Nested
+    @DisplayName("findAllRoles")
+    class FindAllRoles {
+        @Test
+        @DisplayName("deve retornar lista de RoleDTO")
+        void testReturnRoleDtoList() {
+            Role role = new Role("ADMIN");
+            when(roleRepository.findAll()).thenReturn(List.of(role));
 
-        List<RoleDTO> result = roleService.findAllRoles();
+            List<RoleDTO> result = roleService.findAllRoles();
 
-        assertEquals(1, result.size());
-        assertEquals("ADMIN", result.get(0).name());
+            assertEquals(1, result.size());
+            assertEquals("ADMIN", result.get(0).name());
+        }
     }
 
-    @Test
-    @DisplayName("findById deve retornar Role se existir")
-    void findByIdSuccess() {
-        Role role = new Role("ADMIN");
-        when(roleRepository.findById(1L)).thenReturn(Optional.of(role));
+    @Nested
+    @DisplayName("findById")
+    class FindById {
+        @Test
+        @DisplayName("deve retornar Role se existir")
+        void testReturnRoleWhenExists() {
+            Role role = new Role("ADMIN");
+            when(roleRepository.findById(1L)).thenReturn(Optional.of(role));
 
-        Role result = roleService.findById(1L);
+            Role result = roleService.findById(1L);
 
-        assertNotNull(result);
-        assertEquals("ADMIN", result.getName());
+            assertNotNull(result);
+            assertEquals("ADMIN", result.getName());
+        }
+
+        @Test
+        @DisplayName("deve lancar EntityNotFoundException se nao existir")
+        void testThrowEntityNotFoundExceptionWhenNotFound() {
+            when(roleRepository.findById(1L)).thenReturn(Optional.empty());
+
+            assertThrows(EntityNotFoundException.class, () -> roleService.findById(1L));
+        }
     }
 
-    @Test
-    @DisplayName("findById deve lancar EntityNotFoundException se nao existir")
-    void findByIdNotFound() {
-        when(roleRepository.findById(1L)).thenReturn(Optional.empty());
+    @Nested
+    @DisplayName("saveRole")
+    class SaveRole {
+        @Test
+        @DisplayName("deve salvar e retornar RoleDTO")
+        void testSaveAndReturnRoleDto() {
+            PermissionDTO permDTO = new PermissionDTO(1L, "READ", "Read");
+            RoleDTO roleDTO = new RoleDTO(null, "ADMIN", List.of(permDTO));
 
-        assertThrows(EntityNotFoundException.class, () -> roleService.findById(1L));
+            Permission perm = new Permission();
+            ReflectionTestUtils.setField(perm, "name", "READ");
+            ReflectionTestUtils.setField(perm, "label", "Read");
+            when(permissionRepository.findAllById(List.of(1L))).thenReturn(List.of(perm));
+
+            Role savedRole = new Role("ADMIN");
+            savedRole.getPermissions().add(perm);
+            when(roleRepository.save(any(Role.class))).thenReturn(savedRole);
+
+            RoleDTO result = roleService.saveRole(roleDTO);
+
+            assertNotNull(result);
+            assertEquals("ADMIN", result.name());
+        }
+
+        @Test
+        @DisplayName("deve lancar excecao se permissao nao existir")
+        void testThrowExceptionWhenPermissionNotFound() {
+            PermissionDTO permDTO = new PermissionDTO(1L, "READ", "Read");
+            RoleDTO roleDTO = new RoleDTO(null, "ADMIN", List.of(permDTO));
+
+            when(permissionRepository.findAllById(List.of(1L))).thenReturn(List.of());
+
+            assertThrows(EntityNotFoundException.class, () -> roleService.saveRole(roleDTO));
+        }
     }
 
-    @Test
-    @DisplayName("saveRole deve salvar e retornar RoleDTO")
-    void saveRole() {
-        PermissionDTO permDTO = new PermissionDTO(1L, "READ", "Read");
-        RoleDTO roleDTO = new RoleDTO(null, "ADMIN", List.of(permDTO));
+    @Nested
+    @DisplayName("updateRole")
+    class UpdateRole {
+        @Test
+        @DisplayName("deve atualizar e retornar RoleDTO")
+        void testUpdateAndReturnRoleDto() {
+            Role role = new Role("USER");
+            when(roleRepository.findById(1L)).thenReturn(Optional.of(role));
 
-        Permission perm = new Permission();
-        ReflectionTestUtils.setField(perm, "name", "READ");
-        ReflectionTestUtils.setField(perm, "label", "Read");
-        when(permissionRepository.findAllById(List.of(1L))).thenReturn(List.of(perm));
+            PermissionDTO permDTO = new PermissionDTO(1L, "READ", "Read");
+            RoleDTO roleDTO = new RoleDTO(1L, "ADMIN", List.of(permDTO));
 
-        Role savedRole = new Role("ADMIN");
-        savedRole.getPermissions().add(perm);
-        when(roleRepository.save(any(Role.class))).thenReturn(savedRole);
+            Permission perm = new Permission();
+            ReflectionTestUtils.setField(perm, "name", "READ");
+            ReflectionTestUtils.setField(perm, "label", "Read");
+            when(permissionRepository.findAllById(List.of(1L))).thenReturn(List.of(perm));
 
-        RoleDTO result = roleService.saveRole(roleDTO);
+            when(roleRepository.save(any(Role.class))).thenReturn(role);
 
-        assertNotNull(result);
-        assertEquals("ADMIN", result.name());
+            RoleDTO result = roleService.updateRole(1L, roleDTO);
+
+            assertNotNull(result);
+            assertEquals("ADMIN", result.name());
+        }
     }
 
-    @Test
-    @DisplayName("saveRole deve lancar excecao se permissao nao existir")
-    void saveRolePermissionNotFound() {
-        PermissionDTO permDTO = new PermissionDTO(1L, "READ", "Read");
-        RoleDTO roleDTO = new RoleDTO(null, "ADMIN", List.of(permDTO));
+    @Nested
+    @DisplayName("deleteRole")
+    class DeleteRole {
+        @Test
+        @DisplayName("deve deletar cargo sem usuarios vinculados")
+        void testDeleteRoleWithoutUsers() {
+            Role role = new Role("ADMIN");
+            when(roleRepository.findById(1L)).thenReturn(Optional.of(role));
+            when(userRepository.existsByRole_Id(1L)).thenReturn(false);
 
-        when(permissionRepository.findAllById(List.of(1L))).thenReturn(List.of());
+            roleService.deleteRole(1L);
 
-        assertThrows(EntityNotFoundException.class, () -> roleService.saveRole(roleDTO));
-    }
+            verify(roleRepository, times(1)).delete(role);
+        }
 
-    @Test
-    @DisplayName("updateRole deve atualizar e retornar RoleDTO")
-    void updateRole() {
-        Role role = new Role("USER");
-        when(roleRepository.findById(1L)).thenReturn(Optional.of(role));
+        @Test
+        @DisplayName("deve lancar excecao se houver usuarios vinculados")
+        void testThrowExceptionWhenRoleHasUsers() {
+            Role role = new Role("ADMIN");
+            when(roleRepository.findById(1L)).thenReturn(Optional.of(role));
+            when(userRepository.existsByRole_Id(1L)).thenReturn(true);
 
-        PermissionDTO permDTO = new PermissionDTO(1L, "READ", "Read");
-        RoleDTO roleDTO = new RoleDTO(1L, "ADMIN", List.of(permDTO));
-
-        Permission perm = new Permission();
-        ReflectionTestUtils.setField(perm, "name", "READ");
-        ReflectionTestUtils.setField(perm, "label", "Read");
-        when(permissionRepository.findAllById(List.of(1L))).thenReturn(List.of(perm));
-
-        when(roleRepository.save(any(Role.class))).thenReturn(role);
-
-        RoleDTO result = roleService.updateRole(1L, roleDTO);
-
-        assertNotNull(result);
-        assertEquals("ADMIN", result.name());
-    }
-
-    @Test
-    @DisplayName("deleteRole deve deletar cargo sem usuarios vinculados")
-    void deleteRole() {
-        Role role = new Role("ADMIN");
-        when(roleRepository.findById(1L)).thenReturn(Optional.of(role));
-        when(userRepository.existsByRole_Id(1L)).thenReturn(false);
-
-        roleService.deleteRole(1L);
-
-        verify(roleRepository, times(1)).delete(role);
-    }
-
-    @Test
-    @DisplayName("deleteRole deve lancar excecao se houver usuarios vinculados")
-    void deleteRoleWithUsers() {
-        Role role = new Role("ADMIN");
-        when(roleRepository.findById(1L)).thenReturn(Optional.of(role));
-        when(userRepository.existsByRole_Id(1L)).thenReturn(true);
-
-        assertThrows(IllegalStateException.class, () -> roleService.deleteRole(1L));
-        verify(roleRepository, never()).delete(any());
+            assertThrows(IllegalStateException.class, () -> roleService.deleteRole(1L));
+            verify(roleRepository, never()).delete(any());
+        }
     }
 }
