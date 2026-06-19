@@ -1,7 +1,6 @@
 package br.com.project.hydroflow.controller;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -33,7 +32,8 @@ class WaterDeliveryControllerWebMvcTest {
     @Autowired
     private MockMvc mockMvc;
 
-    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+    private final ObjectMapper objectMapper =
+            new ObjectMapper().registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
     @MockitoBean
     private WaterDeliveryService waterDeliveryService;
@@ -47,10 +47,13 @@ class WaterDeliveryControllerWebMvcTest {
     @Test
     @DisplayName("POST /hf/water-deliveries salva entrega")
     void save() throws Exception {
-        WaterDeliveryDTO request = new WaterDeliveryDTO(null, LocalDate.of(2024, 3, 15), BigDecimal.valueOf(1000.0), BigDecimal.valueOf(1000.0), 1L);
-        WaterDeliveryDTO response = new WaterDeliveryDTO(1L, LocalDate.of(2024, 3, 15), BigDecimal.valueOf(1000.0), BigDecimal.valueOf(1000.0), 1L);
+        WaterDeliveryDTO request = new WaterDeliveryDTO(
+                null, LocalDate.of(2024, 3, 15), BigDecimal.valueOf(1000.0), BigDecimal.valueOf(1000.0), 1L);
+        WaterDeliveryDTO response = new WaterDeliveryDTO(
+                1L, LocalDate.of(2024, 3, 15), BigDecimal.valueOf(1000.0), BigDecimal.valueOf(1000.0), 1L);
 
-        when(waterDeliveryService.saveWaterDelivery(any(WaterDeliveryDTO.class))).thenReturn(response);
+        when(waterDeliveryService.saveWaterDelivery(any(WaterDeliveryDTO.class)))
+                .thenReturn(response);
 
         mockMvc.perform(post("/hf/water-deliveries")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -62,7 +65,8 @@ class WaterDeliveryControllerWebMvcTest {
     @Test
     @DisplayName("GET /hf/water-deliveries/year/{year}/family/{familyId} busca por ano e familia")
     void findByYearAndFamilyId() throws Exception {
-        WaterDeliveryDTO response = new WaterDeliveryDTO(1L, LocalDate.of(2024, 3, 15), BigDecimal.valueOf(1000.0), BigDecimal.valueOf(1000.0), 1L);
+        WaterDeliveryDTO response = new WaterDeliveryDTO(
+                1L, LocalDate.of(2024, 3, 15), BigDecimal.valueOf(1000.0), BigDecimal.valueOf(1000.0), 1L);
 
         when(waterDeliveryService.findByYearAndFamilyId(2024, 1L)).thenReturn(List.of(response));
 

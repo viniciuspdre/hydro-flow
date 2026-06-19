@@ -112,7 +112,8 @@ class AuthControllerWebMvcTest {
         when(passwordEncoder.encode("novaSenha")).thenReturn("encodedNovaSenha");
         when(jwtService.generateToken(any())).thenReturn("token123");
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/hf/auth/change-password")
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch(
+                                "/hf/auth/change-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isOk())
@@ -132,7 +133,8 @@ class AuthControllerWebMvcTest {
         when(passwordEncoder.encode("novaSenha")).thenReturn("encodedNovaSenha");
         when(jwtService.generateToken(any())).thenReturn("token123");
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/hf/auth/update-password")
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch(
+                                "/hf/auth/update-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isOk())

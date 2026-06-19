@@ -7,7 +7,6 @@ import br.com.project.hydroflow.domain.Cistern;
 import br.com.project.hydroflow.domain.Family;
 import br.com.project.hydroflow.repository.CisternRepository;
 import java.math.BigDecimal;
-import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -79,6 +78,8 @@ class CisternServiceTest {
         BigDecimal waterAmount = BigDecimal.valueOf(100);
         BigDecimal dailyConsumption = BigDecimal.ZERO;
 
-        assertThrows(IllegalStateException.class, () -> cisternService.calculateRemainingDays(waterAmount, dailyConsumption));
+        assertThrows(
+                IllegalStateException.class,
+                () -> cisternService.calculateRemainingDays(waterAmount, dailyConsumption));
     }
 }

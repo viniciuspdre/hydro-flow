@@ -121,7 +121,6 @@ class UserManagementControllerWebMvcTest {
     void deleteRole() throws Exception {
         doNothing().when(roleService).deleteRole(1L);
 
-        mockMvc.perform(delete("/hf/user-management/roles/1"))
-                .andExpect(status().isNoContent());
+        mockMvc.perform(delete("/hf/user-management/roles/1")).andExpect(status().isNoContent());
     }
 }

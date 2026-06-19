@@ -55,8 +55,30 @@ class FamilyControllerWebMvcTest {
     void createFamily() throws Exception {
         List<MemberDTO> members = List.of(new MemberDTO(1L, "Membro", 30, false));
         List<CisternDTO> cisterns = List.of(new CisternDTO(1L, BigDecimal.valueOf(1000.0), BigDecimal.ZERO));
-        FamilyDTO request = new FamilyDTO(null, "Familia Teste", true, BigDecimal.ZERO, BigDecimal.ZERO, FamilyStatus.NORMAL, members, cisterns, null, null, null);
-        FamilyDTO response = new FamilyDTO(1L, "Familia Teste", true, BigDecimal.ZERO, BigDecimal.ZERO, FamilyStatus.NORMAL, members, cisterns, null, null, null);
+        FamilyDTO request = new FamilyDTO(
+                null,
+                "Familia Teste",
+                true,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                FamilyStatus.NORMAL,
+                members,
+                cisterns,
+                null,
+                null,
+                null);
+        FamilyDTO response = new FamilyDTO(
+                1L,
+                "Familia Teste",
+                true,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                FamilyStatus.NORMAL,
+                members,
+                cisterns,
+                null,
+                null,
+                null);
 
         when(familyService.saveFamily(any(FamilyDTO.class))).thenReturn(response);
 
@@ -73,7 +95,18 @@ class FamilyControllerWebMvcTest {
     void updateFamily() throws Exception {
         List<MemberDTO> members = List.of(new MemberDTO(1L, "Membro", 30, false));
         List<CisternDTO> cisterns = List.of(new CisternDTO(1L, BigDecimal.valueOf(1000.0), BigDecimal.ZERO));
-        FamilyDTO request = new FamilyDTO(1L, "Familia Atualizada", true, BigDecimal.ZERO, BigDecimal.ZERO, FamilyStatus.NORMAL, members, cisterns, null, null, null);
+        FamilyDTO request = new FamilyDTO(
+                1L,
+                "Familia Atualizada",
+                true,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                FamilyStatus.NORMAL,
+                members,
+                cisterns,
+                null,
+                null,
+                null);
 
         when(familyService.updateFamily(eq(1L), any(FamilyDTO.class))).thenReturn(request);
 
@@ -87,7 +120,18 @@ class FamilyControllerWebMvcTest {
     @Test
     @DisplayName("GET /hf/families/{id} busca uma família pelo ID")
     void findFamilyById() throws Exception {
-        FamilyDTO response = new FamilyDTO(1L, "Familia Teste", true, BigDecimal.ZERO, BigDecimal.ZERO, FamilyStatus.NORMAL, List.of(), List.of(), null, null, null);
+        FamilyDTO response = new FamilyDTO(
+                1L,
+                "Familia Teste",
+                true,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                FamilyStatus.NORMAL,
+                List.of(),
+                List.of(),
+                null,
+                null,
+                null);
 
         when(familyService.findFamilyById(1L)).thenReturn(response);
 
@@ -99,7 +143,18 @@ class FamilyControllerWebMvcTest {
     @Test
     @DisplayName("GET /hf/families lista todas as famílias com paginação")
     void findAllFamilies() throws Exception {
-        FamilyDTO family = new FamilyDTO(1L, "Familia Teste", true, BigDecimal.ZERO, BigDecimal.ZERO, FamilyStatus.NORMAL, List.of(), List.of(), null, null, null);
+        FamilyDTO family = new FamilyDTO(
+                1L,
+                "Familia Teste",
+                true,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                FamilyStatus.NORMAL,
+                List.of(),
+                List.of(),
+                null,
+                null,
+                null);
         Page<FamilyDTO> page = new PageImpl<>(List.of(family));
 
         when(familyService.findAllFamilies(any(Pageable.class))).thenReturn(page);
@@ -112,10 +167,22 @@ class FamilyControllerWebMvcTest {
     @Test
     @DisplayName("GET /hf/families filtra pelo nome")
     void findFamiliesByName() throws Exception {
-        FamilyDTO family = new FamilyDTO(1L, "Familia Filtro", true, BigDecimal.ZERO, BigDecimal.ZERO, FamilyStatus.NORMAL, List.of(), List.of(), null, null, null);
+        FamilyDTO family = new FamilyDTO(
+                1L,
+                "Familia Filtro",
+                true,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                FamilyStatus.NORMAL,
+                List.of(),
+                List.of(),
+                null,
+                null,
+                null);
         Page<FamilyDTO> page = new PageImpl<>(List.of(family));
 
-        when(familyService.findFamiliesByName(eq("Filtro"), any(Pageable.class))).thenReturn(page);
+        when(familyService.findFamiliesByName(eq("Filtro"), any(Pageable.class)))
+                .thenReturn(page);
 
         mockMvc.perform(get("/hf/families").param("name", "Filtro"))
                 .andExpect(status().isOk())
@@ -125,10 +192,22 @@ class FamilyControllerWebMvcTest {
     @Test
     @DisplayName("GET /hf/families filtra por status")
     void findFamiliesByStatus() throws Exception {
-        FamilyDTO family = new FamilyDTO(1L, "Familia URGENTE", true, BigDecimal.ZERO, BigDecimal.ZERO, FamilyStatus.URGENT, List.of(), List.of(), null, null, null);
+        FamilyDTO family = new FamilyDTO(
+                1L,
+                "Familia URGENTE",
+                true,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                FamilyStatus.URGENT,
+                List.of(),
+                List.of(),
+                null,
+                null,
+                null);
         Page<FamilyDTO> page = new PageImpl<>(List.of(family));
 
-        when(familyService.findFamiliesByStatus(eq(FamilyStatus.URGENT), any(Pageable.class))).thenReturn(page);
+        when(familyService.findFamiliesByStatus(eq(FamilyStatus.URGENT), any(Pageable.class)))
+                .thenReturn(page);
 
         mockMvc.perform(get("/hf/families").param("status", "URGENT"))
                 .andExpect(status().isOk())
