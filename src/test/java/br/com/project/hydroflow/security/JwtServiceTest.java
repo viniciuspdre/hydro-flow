@@ -6,11 +6,12 @@ import br.com.project.hydroflow.domain.Role;
 import br.com.project.hydroflow.domain.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@DisplayName("JwtService Tests")
+@DisplayName("Testes para JwtService")
 class JwtServiceTest {
 
     private JwtService jwtService;
@@ -23,71 +24,81 @@ class JwtServiceTest {
         ReflectionTestUtils.setField(jwtService, "expiration", 3600000L); // 1 hour
     }
 
-    @Test
-    @DisplayName("generateToken e extractEmail devem funcionar corretamente")
-    void generateTokenAndExtractEmail() {
-        User user = new User("Test", "test@example.com", "pass", new Role("USER"));
-        ReflectionTestUtils.setField(user, "id", 1L);
+    @Nested
+    @DisplayName("generateToken e extractEmail")
+    class GenerateTokenAndExtractEmail {
 
-        String token = jwtService.generateToken(user);
+        @Test
+        @DisplayName("deve funcionar corretamente")
+        void testGenerateTokenAndExtractEmail() {
+            User user = new User("Test", "test@example.com", "pass", new Role("USER"));
+            ReflectionTestUtils.setField(user, "id", 1L);
 
-        assertNotNull(token);
-        String extractedEmail = jwtService.extractEmail(token);
-        assertEquals("test@example.com", extractedEmail);
+            String token = jwtService.generateToken(user);
+
+            assertNotNull(token);
+            String extractedEmail = jwtService.extractEmail(token);
+            assertEquals("test@example.com", extractedEmail);
+        }
     }
 
-    @Test
-    @DisplayName("isTokenValid deve retornar true para token valido")
-    void isTokenValid() {
-        User user = new User("Test", "test@example.com", "pass", new Role("USER"));
-        ReflectionTestUtils.setField(user, "id", 1L);
+    @Nested
+    @DisplayName("isTokenValid")
+    class IsTokenValid {
 
-        String token = jwtService.generateToken(user);
+        @Test
+        @DisplayName("deve retornar true para token valido")
+        void testReturnTrueForValidToken() {
+            User user = new User("Test", "test@example.com", "pass", new Role("USER"));
+            ReflectionTestUtils.setField(user, "id", 1L);
 
-        UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
-                .username("test@example.com")
-                .password("pass")
-                .authorities("USER")
-                .build();
+            String token = jwtService.generateToken(user);
 
-        boolean isValid = jwtService.isTokenValid(token, userDetails);
-        assertTrue(isValid);
-    }
+            UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
+                    .username("test@example.com")
+                    .password("pass")
+                    .authorities("USER")
+                    .build();
 
-    @Test
-    @DisplayName("isTokenValid deve retornar false para email incorreto")
-    void isTokenInvalidEmail() {
-        User user = new User("Test", "test@example.com", "pass", new Role("USER"));
-        ReflectionTestUtils.setField(user, "id", 1L);
+            boolean isValid = jwtService.isTokenValid(token, userDetails);
+            assertTrue(isValid);
+        }
 
-        String token = jwtService.generateToken(user);
+        @Test
+        @DisplayName("deve retornar false para email incorreto")
+        void testReturnFalseForInvalidEmail() {
+            User user = new User("Test", "test@example.com", "pass", new Role("USER"));
+            ReflectionTestUtils.setField(user, "id", 1L);
 
-        UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
-                .username("wrong@example.com")
-                .password("pass")
-                .authorities("USER")
-                .build();
+            String token = jwtService.generateToken(user);
 
-        boolean isValid = jwtService.isTokenValid(token, userDetails);
-        assertFalse(isValid);
-    }
+            UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
+                    .username("wrong@example.com")
+                    .password("pass")
+                    .authorities("USER")
+                    .build();
 
-    @Test
-    @DisplayName("isTokenValid deve retornar false para token expirado")
-    void isTokenExpired() {
-        ReflectionTestUtils.setField(jwtService, "expiration", -1000L); // Expired
+            boolean isValid = jwtService.isTokenValid(token, userDetails);
+            assertFalse(isValid);
+        }
 
-        User user = new User("Test", "test@example.com", "pass", new Role("USER"));
-        ReflectionTestUtils.setField(user, "id", 1L);
+        @Test
+        @DisplayName("deve lancar excecao para token expirado")
+        void testThrowExceptionForExpiredToken() {
+            ReflectionTestUtils.setField(jwtService, "expiration", -1000L); // Expired
 
-        String token = jwtService.generateToken(user);
+            User user = new User("Test", "test@example.com", "pass", new Role("USER"));
+            ReflectionTestUtils.setField(user, "id", 1L);
 
-        UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
-                .username("test@example.com")
-                .password("pass")
-                .authorities("USER")
-                .build();
+            String token = jwtService.generateToken(user);
 
-        assertThrows(io.jsonwebtoken.ExpiredJwtException.class, () -> jwtService.isTokenValid(token, userDetails));
+            UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
+                    .username("test@example.com")
+                    .password("pass")
+                    .authorities("USER")
+                    .build();
+
+            assertThrows(io.jsonwebtoken.ExpiredJwtException.class, () -> jwtService.isTokenValid(token, userDetails));
+        }
     }
 }

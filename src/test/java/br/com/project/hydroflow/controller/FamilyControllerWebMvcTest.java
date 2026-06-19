@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -33,7 +34,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = FamilyController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("Contrato HTTP — FamilyController")
+@DisplayName("Testes para FamilyController")
 class FamilyControllerWebMvcTest {
 
     @Autowired
@@ -50,167 +51,197 @@ class FamilyControllerWebMvcTest {
     @MockitoBean
     private UserDetailsServiceImpl userDetailsService;
 
-    @Test
-    @DisplayName("POST /hf/families cria uma nova família")
-    void createFamily() throws Exception {
-        List<MemberDTO> members = List.of(new MemberDTO(1L, "Membro", 30, false));
-        List<CisternDTO> cisterns = List.of(new CisternDTO(1L, BigDecimal.valueOf(1000.0), BigDecimal.ZERO));
-        FamilyDTO request = new FamilyDTO(
-                null,
-                "Familia Teste",
-                true,
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                FamilyStatus.NORMAL,
-                members,
-                cisterns,
-                null,
-                null,
-                null);
-        FamilyDTO response = new FamilyDTO(
-                1L,
-                "Familia Teste",
-                true,
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                FamilyStatus.NORMAL,
-                members,
-                cisterns,
-                null,
-                null,
-                null);
+    @Nested
+    @DisplayName("createFamily")
+    class CreateFamily {
 
-        when(familyService.saveFamily(any(FamilyDTO.class))).thenReturn(response);
+        @Test
+        @DisplayName("deve criar uma nova família")
+        void testCreateNewFamily() throws Exception {
+            List<MemberDTO> members = List.of(new MemberDTO(1L, "Membro", 30, false));
+            List<CisternDTO> cisterns = List.of(new CisternDTO(1L, BigDecimal.valueOf(1000.0), BigDecimal.ZERO));
+            FamilyDTO request = new FamilyDTO(
+                    null,
+                    "Familia Teste",
+                    true,
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO,
+                    FamilyStatus.NORMAL,
+                    members,
+                    cisterns,
+                    null,
+                    null,
+                    null);
+            FamilyDTO response = new FamilyDTO(
+                    1L,
+                    "Familia Teste",
+                    true,
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO,
+                    FamilyStatus.NORMAL,
+                    members,
+                    cisterns,
+                    null,
+                    null,
+                    null);
 
-        mockMvc.perform(post("/hf/families")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("Familia Teste"));
+            when(familyService.saveFamily(any(FamilyDTO.class))).thenReturn(response);
+
+            mockMvc.perform(post("/hf/families")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.id").value(1L))
+                    .andExpect(jsonPath("$.name").value("Familia Teste"));
+        }
     }
 
-    @Test
-    @DisplayName("PUT /hf/families/{id} atualiza uma família")
-    void updateFamily() throws Exception {
-        List<MemberDTO> members = List.of(new MemberDTO(1L, "Membro", 30, false));
-        List<CisternDTO> cisterns = List.of(new CisternDTO(1L, BigDecimal.valueOf(1000.0), BigDecimal.ZERO));
-        FamilyDTO request = new FamilyDTO(
-                1L,
-                "Familia Atualizada",
-                true,
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                FamilyStatus.NORMAL,
-                members,
-                cisterns,
-                null,
-                null,
-                null);
+    @Nested
+    @DisplayName("updateFamily")
+    class UpdateFamily {
 
-        when(familyService.updateFamily(eq(1L), any(FamilyDTO.class))).thenReturn(request);
+        @Test
+        @DisplayName("deve atualizar uma família")
+        void testUpdateExistingFamily() throws Exception {
+            List<MemberDTO> members = List.of(new MemberDTO(1L, "Membro", 30, false));
+            List<CisternDTO> cisterns = List.of(new CisternDTO(1L, BigDecimal.valueOf(1000.0), BigDecimal.ZERO));
+            FamilyDTO request = new FamilyDTO(
+                    1L,
+                    "Familia Atualizada",
+                    true,
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO,
+                    FamilyStatus.NORMAL,
+                    members,
+                    cisterns,
+                    null,
+                    null,
+                    null);
 
-        mockMvc.perform(put("/hf/families/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Familia Atualizada"));
+            when(familyService.updateFamily(eq(1L), any(FamilyDTO.class))).thenReturn(request);
+
+            mockMvc.perform(put("/hf/families/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.name").value("Familia Atualizada"));
+        }
     }
 
-    @Test
-    @DisplayName("GET /hf/families/{id} busca uma família pelo ID")
-    void findFamilyById() throws Exception {
-        FamilyDTO response = new FamilyDTO(
-                1L,
-                "Familia Teste",
-                true,
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                FamilyStatus.NORMAL,
-                List.of(),
-                List.of(),
-                null,
-                null,
-                null);
+    @Nested
+    @DisplayName("findFamilyById")
+    class FindFamilyById {
 
-        when(familyService.findFamilyById(1L)).thenReturn(response);
+        @Test
+        @DisplayName("deve buscar uma família pelo ID")
+        void testFindFamilyById() throws Exception {
+            FamilyDTO response = new FamilyDTO(
+                    1L,
+                    "Familia Teste",
+                    true,
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO,
+                    FamilyStatus.NORMAL,
+                    List.of(),
+                    List.of(),
+                    null,
+                    null,
+                    null);
 
-        mockMvc.perform(get("/hf/families/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Familia Teste"));
+            when(familyService.findFamilyById(1L)).thenReturn(response);
+
+            mockMvc.perform(get("/hf/families/1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.name").value("Familia Teste"));
+        }
     }
 
-    @Test
-    @DisplayName("GET /hf/families lista todas as famílias com paginação")
-    void findAllFamilies() throws Exception {
-        FamilyDTO family = new FamilyDTO(
-                1L,
-                "Familia Teste",
-                true,
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                FamilyStatus.NORMAL,
-                List.of(),
-                List.of(),
-                null,
-                null,
-                null);
-        Page<FamilyDTO> page = new PageImpl<>(List.of(family));
+    @Nested
+    @DisplayName("findAllFamilies")
+    class FindAllFamilies {
 
-        when(familyService.findAllFamilies(any(Pageable.class))).thenReturn(page);
+        @Test
+        @DisplayName("deve listar todas as famílias com paginação")
+        void testListAllFamilies() throws Exception {
+            FamilyDTO family = new FamilyDTO(
+                    1L,
+                    "Familia Teste",
+                    true,
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO,
+                    FamilyStatus.NORMAL,
+                    List.of(),
+                    List.of(),
+                    null,
+                    null,
+                    null);
+            Page<FamilyDTO> page = new PageImpl<>(List.of(family));
 
-        mockMvc.perform(get("/hf/families"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].name").value("Familia Teste"));
+            when(familyService.findAllFamilies(any(Pageable.class))).thenReturn(page);
+
+            mockMvc.perform(get("/hf/families"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content[0].name").value("Familia Teste"));
+        }
     }
 
-    @Test
-    @DisplayName("GET /hf/families filtra pelo nome")
-    void findFamiliesByName() throws Exception {
-        FamilyDTO family = new FamilyDTO(
-                1L,
-                "Familia Filtro",
-                true,
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                FamilyStatus.NORMAL,
-                List.of(),
-                List.of(),
-                null,
-                null,
-                null);
-        Page<FamilyDTO> page = new PageImpl<>(List.of(family));
+    @Nested
+    @DisplayName("findFamiliesByName")
+    class FindFamiliesByName {
 
-        when(familyService.findFamiliesByName(eq("Filtro"), any(Pageable.class)))
-                .thenReturn(page);
+        @Test
+        @DisplayName("deve filtrar pelo nome")
+        void testFilterFamiliesByName() throws Exception {
+            FamilyDTO family = new FamilyDTO(
+                    1L,
+                    "Familia Filtro",
+                    true,
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO,
+                    FamilyStatus.NORMAL,
+                    List.of(),
+                    List.of(),
+                    null,
+                    null,
+                    null);
+            Page<FamilyDTO> page = new PageImpl<>(List.of(family));
 
-        mockMvc.perform(get("/hf/families").param("name", "Filtro"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].name").value("Familia Filtro"));
+            when(familyService.findFamiliesByName(eq("Filtro"), any(Pageable.class)))
+                    .thenReturn(page);
+
+            mockMvc.perform(get("/hf/families").param("name", "Filtro"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content[0].name").value("Familia Filtro"));
+        }
     }
 
-    @Test
-    @DisplayName("GET /hf/families filtra por status")
-    void findFamiliesByStatus() throws Exception {
-        FamilyDTO family = new FamilyDTO(
-                1L,
-                "Familia URGENTE",
-                true,
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                FamilyStatus.URGENT,
-                List.of(),
-                List.of(),
-                null,
-                null,
-                null);
-        Page<FamilyDTO> page = new PageImpl<>(List.of(family));
+    @Nested
+    @DisplayName("findFamiliesByStatus")
+    class FindFamiliesByStatus {
 
-        when(familyService.findFamiliesByStatus(eq(FamilyStatus.URGENT), any(Pageable.class)))
-                .thenReturn(page);
+        @Test
+        @DisplayName("deve filtrar por status")
+        void testFilterFamiliesByStatus() throws Exception {
+            FamilyDTO family = new FamilyDTO(
+                    1L,
+                    "Familia URGENTE",
+                    true,
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO,
+                    FamilyStatus.URGENT,
+                    List.of(),
+                    List.of(),
+                    null,
+                    null,
+                    null);
+            Page<FamilyDTO> page = new PageImpl<>(List.of(family));
 
-        mockMvc.perform(get("/hf/families").param("status", "URGENT"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].familyStatus").value("URGENT"));
+            when(familyService.findFamiliesByStatus(eq(FamilyStatus.URGENT), any(Pageable.class)))
+                    .thenReturn(page);
+
+            mockMvc.perform(get("/hf/families").param("status", "URGENT"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content[0].familyStatus").value("URGENT"));
+        }
     }
 }

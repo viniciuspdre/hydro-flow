@@ -15,6 +15,7 @@ import br.com.project.hydroflow.security.UserDetailsServiceImpl;
 import br.com.project.hydroflow.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -25,7 +26,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("Contrato HTTP — UserController")
+@DisplayName("Testes para UserController")
 class UserControllerWebMvcTest {
 
     @Autowired
@@ -42,33 +43,43 @@ class UserControllerWebMvcTest {
     @MockitoBean
     private UserDetailsServiceImpl userDetailsService;
 
-    @Test
-    @DisplayName("POST /hf/users cria novo usuário")
-    void createUser() throws Exception {
-        UserDTO request = new UserDTO(null, "Novo Usuario", "novo@teste.com", "senha123", 1L);
-        UserDTO response = new UserDTO(1L, "Novo Usuario", "novo@teste.com", "senha123", 1L);
+    @Nested
+    @DisplayName("createUser")
+    class CreateUser {
 
-        when(userService.saveUser(any(UserDTO.class))).thenReturn(response);
+        @Test
+        @DisplayName("deve criar novo usuário")
+        void testCreateNewUser() throws Exception {
+            UserDTO request = new UserDTO(null, "Novo Usuario", "novo@teste.com", "senha123", 1L);
+            UserDTO response = new UserDTO(1L, "Novo Usuario", "novo@teste.com", "senha123", 1L);
 
-        mockMvc.perform(post("/hf/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1L));
+            when(userService.saveUser(any(UserDTO.class))).thenReturn(response);
+
+            mockMvc.perform(post("/hf/users")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.id").value(1L));
+        }
     }
 
-    @Test
-    @DisplayName("PUT /hf/users/{id} atualiza usuário")
-    void updateUser() throws Exception {
-        UpdateUserDTO request = new UpdateUserDTO("Atualizado", "atualizado@teste.com");
-        UserDTO response = new UserDTO(1L, "Atualizado", "atualizado@teste.com", "senha123", 1L);
+    @Nested
+    @DisplayName("updateUser")
+    class UpdateUser {
 
-        when(userService.updateUser(eq(1L), any(UpdateUserDTO.class))).thenReturn(response);
+        @Test
+        @DisplayName("deve atualizar usuário")
+        void testUpdateUser() throws Exception {
+            UpdateUserDTO request = new UpdateUserDTO("Atualizado", "atualizado@teste.com");
+            UserDTO response = new UserDTO(1L, "Atualizado", "atualizado@teste.com", "senha123", 1L);
 
-        mockMvc.perform(put("/hf/users/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Atualizado"));
+            when(userService.updateUser(eq(1L), any(UpdateUserDTO.class))).thenReturn(response);
+
+            mockMvc.perform(put("/hf/users/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.name").value("Atualizado"));
+        }
     }
 }

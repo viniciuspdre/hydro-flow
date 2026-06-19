@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -19,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.reflect.Field;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -33,7 +35,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("Contrato HTTP — AuthController")
+@DisplayName("Testes para AuthController")
 class AuthControllerWebMvcTest {
 
     @Autowired
@@ -56,91 +58,6 @@ class AuthControllerWebMvcTest {
     @MockitoBean
     private UserDetailsServiceImpl userDetailsService;
 
-    @Test
-    @DisplayName("POST /hf/auth/login retorna 403 e FirstAccessDTO quando usuário está em primeiro acesso")
-    void loginPrimeiroAcessoRetorna403() throws Exception {
-        LoginDTO body = new LoginDTO("maria@example.com", "senha1234");
-
-        User user = new User("Maria", "maria@example.com", "encoded", null);
-        setField(user, "id", 42L);
-        user.setFirstAccess(true);
-
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(mock(Authentication.class));
-        when(userRepository.findByEmail("maria@example.com")).thenReturn(Optional.of(user));
-
-        mockMvc.perform(post("/hf/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.userId").value(42))
-                .andExpect(jsonPath("$.message").value("Troque sua senha antes de continuar"));
-
-        verify(jwtService, never()).generateToken(any());
-    }
-
-    @Test
-    @DisplayName("POST /hf/auth/login retorna 200 e TokenDTO quando sucesso")
-    void loginSucesso() throws Exception {
-        LoginDTO body = new LoginDTO("maria@example.com", "senha1234");
-
-        User user = new User("Maria", "maria@example.com", "encoded", null);
-        setField(user, "id", 42L);
-        user.setFirstAccess(false);
-
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(mock(Authentication.class));
-        when(userRepository.findByEmail("maria@example.com")).thenReturn(Optional.of(user));
-        when(jwtService.generateToken(any())).thenReturn("token123");
-
-        mockMvc.perform(post("/hf/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("token123"));
-    }
-
-    @Test
-    @DisplayName("PATCH /hf/auth/change-password retorna 200 e TokenDTO quando sucesso")
-    void changePasswordSucesso() throws Exception {
-        ChangePasswordDTO body = new ChangePasswordDTO(42L, "senha1234", "novaSenha");
-
-        User user = new User("Maria", "maria@example.com", "encoded", null);
-        setField(user, "id", 42L);
-
-        when(userRepository.findById(42L)).thenReturn(Optional.of(user));
-        when(passwordEncoder.encode("novaSenha")).thenReturn("encodedNovaSenha");
-        when(jwtService.generateToken(any())).thenReturn("token123");
-
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch(
-                                "/hf/auth/change-password")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("token123"));
-    }
-
-    @Test
-    @DisplayName("PATCH /hf/auth/update-password retorna 200 e TokenDTO quando sucesso")
-    void updatePasswordSucesso() throws Exception {
-        ChangePasswordDTO body = new ChangePasswordDTO(42L, "senha1234", "novaSenha");
-
-        User user = new User("Maria", "maria@example.com", "encoded", null);
-        setField(user, "id", 42L);
-
-        when(userRepository.findById(42L)).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("senha1234", "encoded")).thenReturn(true);
-        when(passwordEncoder.encode("novaSenha")).thenReturn("encodedNovaSenha");
-        when(jwtService.generateToken(any())).thenReturn("token123");
-
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch(
-                                "/hf/auth/update-password")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("token123"));
-    }
-
     private static void setField(Object target, String fieldName, Object value) {
         try {
             Field field = target.getClass().getDeclaredField(fieldName);
@@ -148,6 +65,104 @@ class AuthControllerWebMvcTest {
             field.set(target, value);
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException(e);
+        }
+    }
+
+    @Nested
+    @DisplayName("login")
+    class Login {
+
+        @Test
+        @DisplayName("deve retornar 403 e FirstAccessDTO quando usuário está em primeiro acesso")
+        void testReturn403ForFirstAccess() throws Exception {
+            LoginDTO body = new LoginDTO("maria@example.com", "senha1234");
+
+            User user = new User("Maria", "maria@example.com", "encoded", null);
+            setField(user, "id", 42L);
+            user.setFirstAccess(true);
+
+            when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                    .thenReturn(mock(Authentication.class));
+            when(userRepository.findByEmail("maria@example.com")).thenReturn(Optional.of(user));
+
+            mockMvc.perform(post("/hf/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(body)))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.userId").value(42))
+                    .andExpect(jsonPath("$.message").value("Troque sua senha antes de continuar"));
+
+            verify(jwtService, never()).generateToken(any());
+        }
+
+        @Test
+        @DisplayName("deve retornar 200 e TokenDTO quando sucesso")
+        void testReturn200AndTokenDtoOnSuccess() throws Exception {
+            LoginDTO body = new LoginDTO("maria@example.com", "senha1234");
+
+            User user = new User("Maria", "maria@example.com", "encoded", null);
+            setField(user, "id", 42L);
+            user.setFirstAccess(false);
+
+            when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                    .thenReturn(mock(Authentication.class));
+            when(userRepository.findByEmail("maria@example.com")).thenReturn(Optional.of(user));
+            when(jwtService.generateToken(any())).thenReturn("token123");
+
+            mockMvc.perform(post("/hf/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(body)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.token").value("token123"));
+        }
+    }
+
+    @Nested
+    @DisplayName("changePassword")
+    class ChangePassword {
+
+        @Test
+        @DisplayName("deve retornar 200 e TokenDTO quando sucesso")
+        void testReturn200AndTokenDtoOnSuccess() throws Exception {
+            ChangePasswordDTO body = new ChangePasswordDTO(42L, "senha1234", "novaSenha");
+
+            User user = new User("Maria", "maria@example.com", "encoded", null);
+            setField(user, "id", 42L);
+
+            when(userRepository.findById(42L)).thenReturn(Optional.of(user));
+            when(passwordEncoder.encode("novaSenha")).thenReturn("encodedNovaSenha");
+            when(jwtService.generateToken(any())).thenReturn("token123");
+
+            mockMvc.perform(patch("/hf/auth/change-password")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(body)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.token").value("token123"));
+        }
+    }
+
+    @Nested
+    @DisplayName("updatePassword")
+    class UpdatePassword {
+
+        @Test
+        @DisplayName("deve retornar 200 e TokenDTO quando sucesso")
+        void testReturn200AndTokenDtoOnSuccess() throws Exception {
+            ChangePasswordDTO body = new ChangePasswordDTO(42L, "senha1234", "novaSenha");
+
+            User user = new User("Maria", "maria@example.com", "encoded", null);
+            setField(user, "id", 42L);
+
+            when(userRepository.findById(42L)).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("senha1234", "encoded")).thenReturn(true);
+            when(passwordEncoder.encode("novaSenha")).thenReturn("encodedNovaSenha");
+            when(jwtService.generateToken(any())).thenReturn("token123");
+
+            mockMvc.perform(patch("/hf/auth/update-password")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(body)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.token").value("token123"));
         }
     }
 }
